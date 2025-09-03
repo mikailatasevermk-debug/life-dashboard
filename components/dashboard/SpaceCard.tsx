@@ -51,7 +51,15 @@ export function SpaceCard({
   recentNotes = []
 }: SpaceCardProps) {
   const [isHovered, setIsHovered] = useState(false)
-  const Icon = iconMap[iconName]
+  
+  // Get the icon component safely
+  const getIcon = () => {
+    const IconComponent = iconMap[iconName as keyof typeof iconMap]
+    if (IconComponent) {
+      return <IconComponent className="w-8 h-8" style={{ color }} />
+    }
+    return <ChevronRight className="w-8 h-8" style={{ color }} />
+  }
 
 
   return (
@@ -92,7 +100,7 @@ export function SpaceCard({
               whileHover={{ scale: 1.1 }}
               transition={{ duration: 0.2 }}
             >
-              <Icon className="w-8 h-8" style={{ color }} />
+              {getIcon()}
               
               {/* Icon glow effect */}
               <motion.div
