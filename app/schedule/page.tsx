@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { 
   ArrowLeft, 
@@ -10,12 +10,17 @@ import {
   Plus,
   Users,
   Lock,
-  ChevronRight
+  ChevronRight,
+  Edit,
+  Trash2,
+  MapPin
 } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { SPACES } from "@/lib/spaces"
+import { EventModal } from "@/components/calendar/EventModal"
+import { useUserProgress } from "@/lib/user-progress"
 
-import { Briefcase, Home, Heart, ShoppingBag, Building2, Church } from "lucide-react"
+import { Briefcase, Home, Heart, ShoppingBag, Building2, Church, Moon } from "lucide-react"
 
 const iconMap = {
   "briefcase": Briefcase,
@@ -25,6 +30,7 @@ const iconMap = {
   "shopping-bag": ShoppingBag,
   "building-2": Building2,
   "church": Church,
+  "moon": Moon,
 } as const
 
 // Use specific lucide icons for the spaces where available
@@ -34,56 +40,123 @@ interface Event {
   id: string
   title: string
   description?: string
-  startDate: Date
-  endDate?: Date
+  startDate: string
+  endDate?: string
+  startTime: string
+  endTime?: string
   isAllDay: boolean
   sharedWithFamily: boolean
   spaceType: string
-  spaceName: string
-  spaceColor: string
+  location?: string
+  createdAt?: string
 }
 
-const mockEvents: Event[] = [
-  {
-    id: "1",
-    title: "Weekly Planning",
-    description: "Review goals and set priorities",
-    startDate: new Date(Date.now() + 86400000),
-    isAllDay: false,
-    sharedWithFamily: false,
-    spaceType: "PROJECTS",
-    spaceName: "Projects / Business",
-    spaceColor: "#E63946"
-  },
-  {
-    id: "2",
-    title: "Family Dinner",
-    description: "Sunday dinner with everyone",
-    startDate: new Date(Date.now() + 172800000),
-    isAllDay: false,
-    sharedWithFamily: true,
-    spaceType: "FAMILY",
-    spaceName: "Family",
-    spaceColor: "#06D6A0"
-  },
-  {
-    id: "3",
-    title: "Anniversary",
-    description: "Special day with wife",
-    startDate: new Date(Date.now() + 259200000),
-    isAllDay: true,
-    sharedWithFamily: true,
-    spaceType: "LOVE",
-    spaceName: "Love with Wife",
-    spaceColor: "#FF8FA3"
-  }
-]
+// Initial demo events
+const getInitialEvents = (): Event[] => {
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const dayAfter = new Date()
+  dayAfter.setDate(dayAfter.getDate() + 2)
+  const dayAfterThat = new Date()
+  dayAfterThat.setDate(dayAfterThat.getDate() + 3)
+
+  return [
+    {
+      id: "1",
+      title: "Weekly Planning",
+      description: "Review goals and set priorities",
+      startDate: tomorrow.toISOString().split('T')[0],
+      startTime: "10:00",
+      endTime: "11:00",
+      isAllDay: false,
+      sharedWithFamily: false,
+      spaceType: "PROJECTS",
+      location: "Home Office"
+    },
+    {
+      id: "2",
+      title: "Family Dinner",
+      description: "Sunday dinner with everyone",
+      startDate: dayAfter.toISOString().split('T')[0],
+      startTime: "18:00",
+      endTime: "20:00",
+      isAllDay: false,
+      sharedWithFamily: true,
+      spaceType: "FAMILY",
+      location: "Kitchen"
+    },
+    {
+      id: "3",
+      title: "Anniversary",
+      description: "Special day with wife",
+      startDate: dayAfterThat.toISOString().split('T')[0],
+      startTime: "00:00",
+      isAllDay: true,
+      sharedWithFamily: true,
+      spaceType: "LOVE",
+      location: "Romantic Restaurant"
+    }
+  ]
+}
 
 export default function SchedulePage() {
   const [filter, setFilter] = useState<"all" | "shared" | "private">("all")
   const [selectedSpace, setSelectedSpace] = useState<string | null>(null)
+  const [events, setEvents] = useState<Event[]>([])
+  const [showEventModal, setShowEventModal] = useState(false)
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
+  const { addCoins, COIN_REWARDS } = useUserProgress()
 
-  const filteredEvents = mockEvents.filter(event => {
+  // Load events from localStorage on component mount
+  useEffect(() => {
+    const savedEvents = localStorage.getItem('calendar_events')
+    if (savedEvents) {
+      setEvents(JSON.parse(savedEvents))
+    } else {
+      // Set initial demo events if none exist
+      const initialEvents = getInitialEvents()
+      setEvents(initialEvents)
+      localStorage.setItem('calendar_events', JSON.stringify(initialEvents))
+    }
+  }, [])
+
+  const saveEvent = (eventData: any) => {
+    let updatedEvents
+    
+    if (editingEvent) {
+      // Update existing event
+      updatedEvents = events.map(event => 
+        event.id === editingEvent.id ? { ...eventData, createdAt: event.createdAt } : event
+      )
+    } else {
+      // Add new event
+      const newEvent = {
+        ...eventData,
+        createdAt: new Date().toISOString()
+      }
+      updatedEvents = [newEvent, ...events]
+      addCoins(COIN_REWARDS.ADD_EVENT)
+    }
+    
+    setEvents(updatedEvents)
+    localStorage.setItem('calendar_events', JSON.stringify(updatedEvents))
+    setEditingEvent(null)
+  }
+
+  const deleteEvent = (eventId: string) => {
+    if (!confirm('Are you sure you want to delete this event?')) return
+    
+    const updatedEvents = events.filter(event => event.id !== eventId)
+    setEvents(updatedEvents)
+    localStorage.setItem('calendar_events', JSON.stringify(updatedEvents))
+  }
+
+  const editEvent = (event: Event) => {
+    setEditingEvent(event)
+    setShowEventModal(true)
+  }
+
+  const filteredEvents = events.filter(event => {
     if (filter === "shared" && !event.sharedWithFamily) return false
     if (filter === "private" && event.sharedWithFamily) return false
     if (selectedSpace && event.spaceType !== selectedSpace) return false
@@ -91,13 +164,26 @@ export default function SchedulePage() {
   })
 
   const groupedEvents = filteredEvents.reduce((acc, event) => {
-    const dateKey = event.startDate.toDateString()
+    const dateKey = new Date(event.startDate).toDateString()
     if (!acc[dateKey]) {
       acc[dateKey] = []
     }
     acc[dateKey].push(event)
     return acc
   }, {} as Record<string, Event[]>)
+
+  // Sort events by date
+  const sortedGroupedEvents = Object.entries(groupedEvents)
+    .sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
+    .reduce((acc, [date, events]) => {
+      acc[date] = events.sort((a, b) => {
+        if (a.isAllDay && !b.isAllDay) return -1
+        if (!a.isAllDay && b.isAllDay) return 1
+        if (a.isAllDay && b.isAllDay) return 0
+        return a.startTime.localeCompare(b.startTime)
+      })
+      return acc
+    }, {} as Record<string, Event[]>)
 
   return (
     <div className="min-h-screen p-6">
@@ -119,7 +205,13 @@ export default function SchedulePage() {
                 <p className="text-sm text-gray-600">Your events from all spaces</p>
               </div>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-sky-blue text-white rounded-lg hover:opacity-90 transition-opacity">
+            <button 
+              onClick={() => {
+                setEditingEvent(null)
+                setShowEventModal(true)
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-sky-blue text-white rounded-lg hover:opacity-90 transition-opacity"
+            >
               <Plus className="w-4 h-4" />
               <span className="text-sm font-medium">New Event</span>
             </button>
@@ -196,7 +288,7 @@ export default function SchedulePage() {
         </header>
 
         <div className="space-y-6">
-          {Object.entries(groupedEvents).map(([date, events]) => (
+          {Object.entries(sortedGroupedEvents).map(([date, events]) => (
             <motion.div
               key={date}
               initial={{ opacity: 0, y: 10 }}
@@ -211,46 +303,78 @@ export default function SchedulePage() {
                 })}
               </h3>
               <div className="space-y-2">
-                {events.map(event => (
-                  <div
-                    key={event.id}
-                    className="flex items-center gap-3 p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors cursor-pointer"
-                  >
-                    <div 
-                      className="w-1 h-12 rounded-full"
-                      style={{ backgroundColor: event.spaceColor }}
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-gray-800">{event.title}</h4>
-                        {event.sharedWithFamily && (
-                          <Users className="w-3 h-3 text-gray-500" />
+                {events.map(event => {
+                  const space = SPACES.find(s => s.type === event.spaceType)
+                  return (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="group flex items-center gap-3 p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors cursor-pointer"
+                    >
+                      <div 
+                        className="w-1 h-12 rounded-full"
+                        style={{ backgroundColor: space?.color }}
+                      />
+                      <div className="flex-1" onClick={() => editEvent(event)}>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-gray-800">{event.title}</h4>
+                          {event.sharedWithFamily && (
+                            <Users className="w-3 h-3 text-gray-500" />
+                          )}
+                          {!event.sharedWithFamily && (
+                            <Lock className="w-3 h-3 text-gray-500" />
+                          )}
+                        </div>
+                        {event.description && (
+                          <p className="text-sm text-gray-600">{event.description}</p>
                         )}
-                      </div>
-                      {event.description && (
-                        <p className="text-sm text-gray-600">{event.description}</p>
-                      )}
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-gray-500">
-                          {event.spaceName}
-                        </span>
-                        {!event.isAllDay && (
-                          <span className="text-xs text-gray-500 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {event.startDate.toLocaleTimeString("en-US", { 
-                              hour: "numeric", 
-                              minute: "2-digit" 
-                            })}
+                        <div className="flex items-center gap-3 mt-1 flex-wrap">
+                          <span className="text-xs text-gray-500">
+                            {space?.name}
                           </span>
-                        )}
-                        {event.isAllDay && (
-                          <span className="text-xs text-gray-500">All day</span>
-                        )}
+                          {!event.isAllDay && (
+                            <span className="text-xs text-gray-500 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {event.startTime} - {event.endTime}
+                            </span>
+                          )}
+                          {event.isAllDay && (
+                            <span className="text-xs text-gray-500">All day</span>
+                          )}
+                          {event.location && (
+                            <span className="text-xs text-gray-500 flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {event.location}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                  </div>
-                ))}
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            editEvent(event)
+                          }}
+                          className="p-2 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
+                          title="Edit event"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteEvent(event.id)
+                          }}
+                          className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                          title="Delete event"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  )
+                })}
               </div>
             </motion.div>
           ))}
@@ -277,6 +401,17 @@ export default function SchedulePage() {
           </div>
         </div>
       </div>
+
+      {/* Event Modal */}
+      <EventModal
+        isOpen={showEventModal}
+        onClose={() => {
+          setShowEventModal(false)
+          setEditingEvent(null)
+        }}
+        onSave={saveEvent}
+        editingEvent={editingEvent}
+      />
     </div>
   )
 }

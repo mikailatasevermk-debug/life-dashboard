@@ -68,12 +68,12 @@ export const SPACES = [
   },
   {
     type: SpaceType.FAITH,
-    name: "Religion / Faith",
-    color: "#6A4C93",
-    colorName: "royal-purple",
-    cardClass: "royal-purple-card",
-    iconName: "church",
-    description: "Spiritual journey and reflections"
+    name: "Islamic Faith",
+    color: "#10B981",
+    colorName: "islamic-green",
+    cardClass: "islamic-green-card",
+    iconName: "moon",
+    description: "Prayer, Quran, Dhikr, and Islamic guidance"
   }
 ]
 

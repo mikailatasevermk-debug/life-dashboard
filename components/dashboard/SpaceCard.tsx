@@ -3,9 +3,6 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { 
-  Plus, 
-  Camera, 
-  Mic, 
   ChevronRight,
   Briefcase,
   Users,
@@ -13,10 +10,10 @@ import {
   Heart,
   ShoppingBag,
   Building2,
-  Church
+  Church,
+  Moon
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { NoteModal } from "@/components/notes/NoteModal"
 
 const iconMap = {
   "briefcase": Briefcase,
@@ -26,6 +23,7 @@ const iconMap = {
   "shopping-bag": ShoppingBag,
   "building-2": Building2,
   "church": Church,
+  "moon": Moon,
 }
 
 interface SpaceCardProps {
@@ -53,34 +51,8 @@ export function SpaceCard({
   recentNotes = []
 }: SpaceCardProps) {
   const [isHovered, setIsHovered] = useState(false)
-  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
   const Icon = iconMap[iconName]
 
-  const handleSaveNote = async (note: { title: string; content: string }) => {
-    try {
-      const response = await fetch('/api/notes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          spaceType: type.toUpperCase(),
-          title: note.title,
-          content: { text: note.content },
-        }),
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to save note')
-      }
-      
-      // You could add a success toast here
-      console.log('Note saved successfully!')
-    } catch (error) {
-      console.error('Error saving note:', error)
-      // You could add an error toast here
-    }
-  }
 
   return (
     <motion.div
@@ -97,7 +69,7 @@ export function SpaceCard({
     >
       <div className={cn(
         cardClass, 
-        "relative p-6 h-56 w-full overflow-hidden",
+        "relative p-4 h-40 w-full overflow-hidden",
         "transform transition-all duration-300 ease-out",
         "hover:shadow-2xl"
       )}>
@@ -109,10 +81,10 @@ export function SpaceCard({
             }}
           />
           
-          {/* Header Section */}
-          <div className="relative z-10 flex flex-col items-center text-center mb-4">
+          {/* Clean Header Section */}
+          <div className="relative z-10 flex flex-col items-center text-center h-full justify-center">
             <motion.div 
-              className="relative p-3 rounded-2xl mb-3"
+              className="relative p-3 rounded-2xl mb-2"
               style={{ 
                 background: `linear-gradient(135deg, ${color}20 0%, ${color}10 100%)`,
                 border: `1px solid ${color}40`
@@ -120,7 +92,7 @@ export function SpaceCard({
               whileHover={{ scale: 1.1 }}
               transition={{ duration: 0.2 }}
             >
-              <Icon className="w-10 h-10" style={{ color }} />
+              <Icon className="w-8 h-8" style={{ color }} />
               
               {/* Icon glow effect */}
               <motion.div
@@ -132,12 +104,9 @@ export function SpaceCard({
               />
             </motion.div>
             
-            <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-gray-950 transition-colors">
+            <h3 className="text-sm font-bold text-gray-900 group-hover:text-gray-950 transition-colors px-1 text-center leading-tight">
               {name}
             </h3>
-            <p className="text-sm text-gray-700 group-hover:text-gray-800 transition-colors line-clamp-2 px-2">
-              {description}
-            </p>
             
             <motion.div
               animate={{
@@ -145,82 +114,26 @@ export function SpaceCard({
                 opacity: isHovered ? 1 : 0.6
               }}
               transition={{ duration: 0.2 }}
-              className="absolute top-2 right-2"
+              className="absolute top-1 right-1"
             >
-              <ChevronRight className="w-4 h-4 text-gray-500" />
+              <ChevronRight className="w-3 h-3 text-gray-500" />
             </motion.div>
           </div>
 
-          {/* Content Section */}
-          <div className="relative z-10 flex-1 mb-4">
-            <motion.div 
-              className="p-3 bg-white/50 rounded-xl backdrop-blur-sm border border-white/50 hover:border-white/70 transition-colors text-center shadow-sm"
-              whileHover={{ scale: 1.02 }}
+          {/* Hover overlay for interactions */}
+          <motion.div
+            className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl flex items-end justify-center pb-2"
+          >
+            <motion.div
+              className="text-white font-medium text-xs bg-black/30 px-2 py-1 rounded-full backdrop-blur-sm"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: isHovered ? 1 : 0.8, opacity: isHovered ? 1 : 0 }}
+              transition={{ duration: 0.2 }}
             >
-              <p className="text-sm text-gray-700 font-semibold">
-                ✨ Click to start
-              </p>
+              Click to explore
             </motion.div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="relative z-10 flex gap-2">
-            <motion.button
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white/70 hover:bg-white/90 rounded-xl transition-all duration-200 font-semibold text-gray-800 hover:text-gray-900 shadow-sm hover:shadow-md"
-              whileHover={{ 
-                y: -1,
-                transition: { type: "spring", stiffness: 400 }
-              }}
-              whileTap={{ 
-                scale: 0.98,
-                animation: "mario-jump 0.5s ease-out"
-              }}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                setIsNoteModalOpen(true)
-              }}
-              style={{
-                boxShadow: `0 2px 8px ${color}20`
-              }}
-            >
-              <Plus className="w-4 h-4" />
-              <span className="text-sm">Note</span>
-            </motion.button>
-            
-            <motion.button
-              className="flex items-center justify-center p-2 bg-white/70 hover:bg-white/90 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
-              whileHover={{ y: -1, scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={(e) => {
-                e.preventDefault()
-                console.log("Add image")
-              }}
-            >
-              <Camera className="w-4 h-4 text-gray-700" />
-            </motion.button>
-            
-            <motion.button
-              className="flex items-center justify-center p-2 bg-white/70 hover:bg-white/90 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
-              whileHover={{ y: -1, scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={(e) => {
-                e.preventDefault()
-                console.log("Record audio")
-              }}
-            >
-              <Mic className="w-4 h-4 text-gray-700" />
-            </motion.button>
-          </div>
+          </motion.div>
         </div>
-        
-        <NoteModal
-          isOpen={isNoteModalOpen}
-          onClose={() => setIsNoteModalOpen(false)}
-          spaceType={type}
-          spaceName={name}
-          onSave={handleSaveNote}
-        />
     </motion.div>
   )
 }

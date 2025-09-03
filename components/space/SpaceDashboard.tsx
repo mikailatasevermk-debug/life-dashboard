@@ -2,12 +2,20 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { ArrowLeft, Save, Share, Settings, Plus } from "lucide-react"
+import { ArrowLeft, Save, Share, Settings, Plus, Mic } from "lucide-react"
 import { useTransition } from "@/contexts/TransitionContext"
 import { NotesList } from "@/components/notes/NotesList"
 import { NoteModal } from "@/components/notes/NoteModal"
 import { GoalsManager } from "@/components/goals/GoalsManager"
 import { useUserProgress } from "@/lib/user-progress"
+import { VoiceRecorder } from "@/components/quick-tools/VoiceRecorder"
+import { PhotoUpload } from "@/components/quick-tools/PhotoUpload"
+import { QuickTask } from "@/components/quick-tools/QuickTask"
+import { QuickSchedule } from "@/components/quick-tools/QuickSchedule"
+import { VoiceNoteModal } from "@/components/notes/VoiceNoteModal"
+import { PrayerTimes } from "@/components/islamic/PrayerTimes"
+import { DhikrCounter } from "@/components/islamic/DhikrCounter"
+import { QuranTracker } from "@/components/islamic/QuranTracker"
 
 interface SpaceDashboardProps {
   space: {
@@ -24,16 +32,25 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const { progress, addCoins, COIN_REWARDS } = useUserProgress()
+  const [activeQuickTool, setActiveQuickTool] = useState<'voice' | 'photo' | 'task' | 'schedule' | null>(null)
+  const [showVoiceNote, setShowVoiceNote] = useState(false)
   const [loveCount, setLoveCount] = useState(() => {
     const saved = localStorage.getItem(`loveCount_${space.type}`)
     return saved ? parseInt(saved) : 0
   })
+  const [recentNotes, setRecentNotes] = useState<any[]>([])
 
   useEffect(() => {
     addCoins(COIN_REWARDS.SPACE_VISIT)
-  }, [space.type])
+    loadRecentNotes()
+  }, [space.type, refreshKey])
 
-  const handleSaveNote = async (note: { title: string; content: string }) => {
+  const loadRecentNotes = () => {
+    const notes = JSON.parse(localStorage.getItem(`notes_${space.type}`) || '[]')
+    setRecentNotes(notes.slice(0, 3)) // Show only the 3 most recent
+  }
+
+  const handleSaveNote = async (note: { title: string; content: string; audioBlob?: Blob; transcript?: string }) => {
     try {
       // In demo mode, save to localStorage
       const noteData = {
@@ -41,15 +58,28 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
         spaceType: space.type,
         title: note.title,
         content: note.content,
+        hasAudio: !!note.audioBlob,
+        transcript: note.transcript,
+        isVoiceNote: !!note.audioBlob,
         createdAt: new Date().toISOString()
+      }
+      
+      // Store audio blob separately with base64 encoding for localStorage
+      if (note.audioBlob) {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          const base64Audio = reader.result as string
+          localStorage.setItem(`audio_${noteData.id}`, base64Audio)
+        }
+        reader.readAsDataURL(note.audioBlob)
       }
       
       const existingNotes = JSON.parse(localStorage.getItem(`notes_${space.type}`) || '[]')
       existingNotes.unshift(noteData)
       localStorage.setItem(`notes_${space.type}`, JSON.stringify(existingNotes))
       
-      // Reward coins for creating a note
-      addCoins(COIN_REWARDS.CREATE_NOTE)
+      // Reward coins for creating a note (bonus for voice notes)
+      addCoins(note.audioBlob ? COIN_REWARDS.CREATE_NOTE + 5 : COIN_REWARDS.CREATE_NOTE)
       
       // Trigger notes list refresh
       setRefreshKey(prev => prev + 1)
@@ -77,7 +107,7 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
         damping: 30,
         duration: 0.5
       }}
-      className="fixed inset-0 bg-gradient-to-br from-sky-blue/20 to-peach-pink/20 backdrop-blur-sm"
+      className="fixed inset-0 bg-gradient-to-br from-sky-blue/20 to-peach-pink/20 backdrop-blur-sm overflow-hidden"
       style={{
         background: `linear-gradient(135deg, ${space.color}10 0%, #87CEEB 50%, #FFB6C1 100%)`
       }}
@@ -139,7 +169,7 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
       </motion.header>
 
       {/* Main Content */}
-      <div className="h-[calc(100vh-80px)] flex">
+      <div className="h-[calc(100vh-80px)] flex overflow-hidden">
         {/* Left Panel - Notes */}
         <motion.div 
           className="w-1/2 p-6 flex flex-col"
@@ -149,16 +179,29 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
         >
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-800">✍️ Notes</h2>
-            <motion.button
-              onClick={() => setIsNoteModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-white shadow-lg hover:shadow-xl transition-all duration-200"
-              style={{ backgroundColor: space.color }}
-              whileHover={{ y: -2, scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Plus className="w-4 h-4" />
-              <span className="text-sm">New Note</span>
-            </motion.button>
+            <div className="flex gap-2">
+              <motion.button
+                onClick={() => setIsNoteModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                style={{ backgroundColor: space.color }}
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Plus className="w-4 h-4" />
+                <span className="text-sm">Text Note</span>
+              </motion.button>
+              
+              <motion.button
+                onClick={() => setShowVoiceNote(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium bg-red-500 text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:bg-red-600"
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                title="Voice Note - Perfect for hands-free use"
+              >
+                <Mic className="w-4 h-4" />
+                <span className="text-sm">Voice</span>
+              </motion.button>
+            </div>
           </div>
           
           <div className="flex-1 bg-white/60 backdrop-blur-xl rounded-2xl border border-white/40 shadow-lg overflow-auto p-6">
@@ -168,7 +211,7 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
 
         {/* Right Panel - Widgets */}
         <motion.div 
-          className="w-1/2 p-6 flex flex-col gap-6"
+          className="w-1/2 p-6 flex flex-col gap-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
           initial={{ x: 50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
@@ -183,11 +226,33 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
             transition={{ delay: 0.5 }}
           >
             <h3 className="font-semibold text-gray-800 mb-3">📝 Recent Notes</h3>
-            <div className="space-y-2">
-              <div className="p-3 bg-white/50 rounded-lg">
-                <p className="text-sm text-gray-600">No notes yet</p>
-                <p className="text-xs text-gray-500 mt-1">Start writing to see them here</p>
-              </div>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {recentNotes.length > 0 ? (
+                recentNotes.map((note) => (
+                  <div key={note.id} className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors">
+                    <div className="flex items-center gap-2 mb-1">
+                      {note.isVoiceNote && <Mic className="w-3 h-3 text-red-500" />}
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {note.title || 'Untitled'}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                      {note.transcript ? 
+                        (note.transcript.length > 50 ? `${note.transcript.slice(0, 50)}...` : note.transcript) :
+                        (note.content.length > 60 ? `${note.content.slice(0, 60)}...` : note.content)
+                      }
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(note.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="p-3 bg-white/50 rounded-lg">
+                  <p className="text-sm text-gray-600">No notes yet</p>
+                  <p className="text-xs text-gray-500 mt-1">Start writing to see them here</p>
+                </div>
+              )}
             </div>
           </motion.div>
 
@@ -266,31 +331,37 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
               </div>
             )}
 
+            {space.type === 'FAITH' && (
+              <div>
+                <PrayerTimes city="Mecca" country="Saudi Arabia" />
+              </div>
+            )}
+
             {/* Default widget for other spaces */}
-            {!['LOVE', 'PROJECTS', 'FAMILY'].includes(space.type) && (
+            {!['LOVE', 'PROJECTS', 'FAMILY', 'FAITH'].includes(space.type) && (
               <div>
                 <h3 className="font-semibold text-gray-800 mb-3">⭐ Quick Tools</h3>
                 <div className="grid grid-cols-2 gap-2">
                   <button 
-                    onClick={() => setIsNoteModalOpen(true)}
+                    onClick={() => setActiveQuickTool('photo')}
                     className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm"
                   >
                     📷 Add Photo
                   </button>
                   <button 
-                    onClick={() => setIsNoteModalOpen(true)}
+                    onClick={() => setActiveQuickTool('voice')}
                     className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm"
                   >
                     🎙️ Voice Note
                   </button>
                   <button 
-                    onClick={() => setIsNoteModalOpen(true)}
+                    onClick={() => setActiveQuickTool('task')}
                     className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm"
                   >
                     ✅ Add Task
                   </button>
                   <button 
-                    onClick={() => setIsNoteModalOpen(true)}
+                    onClick={() => setActiveQuickTool('schedule')}
                     className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm"
                   >
                     📅 Schedule
@@ -300,47 +371,75 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
             )}
           </motion.div>
 
+          {/* Islamic Dhikr Counter Widget for FAITH space */}
+          {space.type === 'FAITH' && (
+            <motion.div 
+              className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 border border-white/40 shadow-lg"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              <DhikrCounter />
+            </motion.div>
+          )}
+
           {/* Goals Widget */}
-          <motion.div 
-            className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 border border-white/40 shadow-lg"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.7 }}
-          >
-            <GoalsManager 
-              spaceType={space.type} 
-              spaceName={space.name}
-              onGoalComplete={(goal) => {
-                addCoins(COIN_REWARDS.COMPLETE_TASK)
-              }}
-            />
-          </motion.div>
+          {space.type !== 'FAITH' && (
+            <motion.div 
+              className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 border border-white/40 shadow-lg"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              <GoalsManager 
+                spaceType={space.type} 
+                spaceName={space.name}
+                onGoalComplete={(goal) => {
+                  addCoins(COIN_REWARDS.COMPLETE_TASK)
+                }}
+              />
+            </motion.div>
+          )}
+
+          {/* Islamic Quran Tracker Widget for FAITH space */}
+          {space.type === 'FAITH' && (
+            <motion.div 
+              className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 border border-white/40 shadow-lg"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.8 }}
+            >
+              <QuranTracker />
+            </motion.div>
+          )}
 
           {/* Mood Tracker Widget */}
-          <motion.div 
-            className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 border border-white/40 shadow-lg"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.8 }}
-          >
-            <h3 className="font-semibold text-gray-800 mb-3">😊 Today's Mood</h3>
-            <div className="flex justify-between items-center">
-              {['😢', '😐', '🙂', '😊', '🤩'].map((emoji, index) => (
-                <motion.button
-                  key={index}
-                  className="text-2xl p-2 rounded-full hover:bg-white/50 transition-colors"
-                  whileHover={{ scale: 1.2 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => {
-                    addCoins(COIN_REWARDS.MOOD_TRACK)
-                    localStorage.setItem(`mood_${space.type}_${new Date().toDateString()}`, index.toString())
-                  }}
-                >
-                  {emoji}
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
+          {space.type !== 'FAITH' && (
+            <motion.div 
+              className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 border border-white/40 shadow-lg"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.8 }}
+            >
+              <h3 className="font-semibold text-gray-800 mb-3">😊 Today's Mood</h3>
+              <div className="flex justify-between items-center">
+                {['😢', '😐', '🙂', '😊', '🤩'].map((emoji, index) => (
+                  <motion.button
+                    key={index}
+                    className="text-2xl p-2 rounded-full hover:bg-white/50 transition-colors"
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => {
+                      addCoins(COIN_REWARDS.MOOD_TRACK)
+                      localStorage.setItem(`mood_${space.type}_${new Date().toDateString()}`, index.toString())
+                    }}
+                  >
+                    {emoji}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </motion.div>
       </div>
       
@@ -350,6 +449,66 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
         spaceType={space.type}
         spaceName={space.name}
         onSave={handleSaveNote}
+      />
+      
+      {/* Quick Tools Modals */}
+      <VoiceRecorder
+        isOpen={activeQuickTool === 'voice'}
+        onClose={() => setActiveQuickTool(null)}
+        spaceType={space.type}
+        spaceName={space.name}
+        onSave={() => {
+          addCoins(COIN_REWARDS.CREATE_NOTE)
+          setActiveQuickTool(null)
+          setRefreshKey(prev => prev + 1)
+        }}
+      />
+      
+      <PhotoUpload
+        isOpen={activeQuickTool === 'photo'}
+        onClose={() => setActiveQuickTool(null)}
+        spaceType={space.type}
+        spaceName={space.name}
+        onSave={() => {
+          addCoins(COIN_REWARDS.CREATE_NOTE)
+          setActiveQuickTool(null)
+          setRefreshKey(prev => prev + 1)
+        }}
+      />
+      
+      <QuickTask
+        isOpen={activeQuickTool === 'task'}
+        onClose={() => setActiveQuickTool(null)}
+        spaceType={space.type}
+        spaceName={space.name}
+        onSave={() => {
+          addCoins(COIN_REWARDS.COMPLETE_TASK)
+          setActiveQuickTool(null)
+          setRefreshKey(prev => prev + 1)
+        }}
+      />
+      
+      <QuickSchedule
+        isOpen={activeQuickTool === 'schedule'}
+        onClose={() => setActiveQuickTool(null)}
+        spaceType={space.type}
+        spaceName={space.name}
+        onSave={() => {
+          addCoins(COIN_REWARDS.ADD_EVENT)
+          setActiveQuickTool(null)
+        }}
+      />
+      
+      {/* Voice Note Modal */}
+      <VoiceNoteModal
+        isOpen={showVoiceNote}
+        onClose={() => setShowVoiceNote(false)}
+        spaceType={space.type}
+        spaceName={space.name}
+        onSave={(note) => {
+          handleSaveNote(note)
+          setShowVoiceNote(false)
+        }}
       />
     </motion.div>
   )

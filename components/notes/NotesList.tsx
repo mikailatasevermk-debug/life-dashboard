@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { FileText, Pin, Trash2, Edit3, Calendar } from "lucide-react"
+import { FileText, Pin, Trash2, Edit3, Calendar, Mic, Play, Pause } from "lucide-react"
 // Simple date formatting function
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
@@ -28,6 +28,9 @@ interface Note {
   isPinned: boolean
   createdAt: string
   updatedAt: string
+  hasAudio?: boolean
+  transcript?: string
+  isVoiceNote?: boolean
 }
 
 interface NotesListProps {
@@ -38,6 +41,7 @@ interface NotesListProps {
 export function NotesList({ spaceType, spaceName }: NotesListProps) {
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null)
 
   useEffect(() => {
     fetchNotes()
@@ -85,9 +89,37 @@ export function NotesList({ spaceType, spaceName }: NotesListProps) {
       const storedNotes = JSON.parse(localStorage.getItem(`notes_${spaceType}`) || '[]')
       const updatedNotes = storedNotes.filter((note: any) => note.id !== noteId)
       localStorage.setItem(`notes_${spaceType}`, JSON.stringify(updatedNotes))
+      
+      // Also delete associated audio
+      localStorage.removeItem(`audio_${noteId}`)
+      
       fetchNotes() // Refresh the list
     } catch (error) {
       console.error("Error deleting note:", error)
+    }
+  }
+
+  const playAudio = async (noteId: string) => {
+    try {
+      if (playingAudio === noteId) {
+        setPlayingAudio(null)
+        return
+      }
+
+      const audioData = localStorage.getItem(`audio_${noteId}`)
+      if (audioData) {
+        const audio = new Audio(audioData)
+        setPlayingAudio(noteId)
+        
+        audio.onended = () => {
+          setPlayingAudio(null)
+        }
+        
+        audio.play()
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error)
+      setPlayingAudio(null)
     }
   }
 
@@ -171,9 +203,36 @@ export function NotesList({ spaceType, spaceName }: NotesListProps) {
             </div>
           </div>
 
+          {/* Voice Note Indicator */}
+          {note.isVoiceNote && (
+            <div className="mb-3 flex items-center gap-2 p-2 bg-red-50 rounded-lg border border-red-200">
+              <Mic className="w-4 h-4 text-red-600" />
+              <span className="text-sm font-medium text-red-700">Voice Note</span>
+              {note.hasAudio && (
+                <button
+                  onClick={() => playAudio(note.id)}
+                  className="ml-auto p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                >
+                  {playingAudio === note.id ? (
+                    <Pause className="w-4 h-4" />
+                  ) : (
+                    <Play className="w-4 h-4" />
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Content Preview */}
           <div className="text-sm text-gray-700 line-clamp-4">
-            {getContentPreview(note.content)}
+            {note.transcript ? (
+              <div>
+                <span className="text-xs text-blue-600 font-medium">Transcript:</span>
+                <p className="mt-1">{note.transcript}</p>
+              </div>
+            ) : (
+              getContentPreview(note.content)
+            )}
           </div>
 
           {/* Footer */}
