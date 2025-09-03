@@ -45,13 +45,21 @@ export function NotesList({ spaceType, spaceName }: NotesListProps) {
 
   const fetchNotes = async () => {
     try {
-      const response = await fetch(`/api/notes?spaceType=${spaceType}&userId=default-user`)
-      if (response.ok) {
-        const data = await response.json()
-        setNotes(data)
+      // In demo mode, read from localStorage
+      const storedNotes = localStorage.getItem(`notes_${spaceType}`)
+      if (storedNotes) {
+        const parsedNotes = JSON.parse(storedNotes).map((note: any) => ({
+          ...note,
+          isPinned: note.isPinned || false,
+          updatedAt: note.updatedAt || note.createdAt
+        }))
+        setNotes(parsedNotes)
+      } else {
+        setNotes([])
       }
     } catch (error) {
       console.error("Error fetching notes:", error)
+      setNotes([])
     } finally {
       setLoading(false)
     }
@@ -59,20 +67,12 @@ export function NotesList({ spaceType, spaceName }: NotesListProps) {
 
   const togglePin = async (noteId: string, isPinned: boolean) => {
     try {
-      const response = await fetch('/api/notes', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: noteId,
-          isPinned: !isPinned,
-        }),
-      })
-
-      if (response.ok) {
-        fetchNotes() // Refresh the list
-      }
+      const storedNotes = JSON.parse(localStorage.getItem(`notes_${spaceType}`) || '[]')
+      const updatedNotes = storedNotes.map((note: any) => 
+        note.id === noteId ? { ...note, isPinned: !isPinned } : note
+      )
+      localStorage.setItem(`notes_${spaceType}`, JSON.stringify(updatedNotes))
+      fetchNotes() // Refresh the list
     } catch (error) {
       console.error("Error updating note:", error)
     }
@@ -82,13 +82,10 @@ export function NotesList({ spaceType, spaceName }: NotesListProps) {
     if (!confirm("Are you sure you want to delete this note?")) return
 
     try {
-      const response = await fetch(`/api/notes?id=${noteId}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        fetchNotes() // Refresh the list
-      }
+      const storedNotes = JSON.parse(localStorage.getItem(`notes_${spaceType}`) || '[]')
+      const updatedNotes = storedNotes.filter((note: any) => note.id !== noteId)
+      localStorage.setItem(`notes_${spaceType}`, JSON.stringify(updatedNotes))
+      fetchNotes() // Refresh the list
     } catch (error) {
       console.error("Error deleting note:", error)
     }

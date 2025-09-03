@@ -35,21 +35,18 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
 
   const handleSaveNote = async (note: { title: string; content: string }) => {
     try {
-      const response = await fetch('/api/notes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          spaceType: space.type,
-          title: note.title,
-          content: { text: note.content },
-        }),
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to save note')
+      // In demo mode, save to localStorage
+      const noteData = {
+        id: Date.now().toString(),
+        spaceType: space.type,
+        title: note.title,
+        content: note.content,
+        createdAt: new Date().toISOString()
       }
+      
+      const existingNotes = JSON.parse(localStorage.getItem(`notes_${space.type}`) || '[]')
+      existingNotes.unshift(noteData)
+      localStorage.setItem(`notes_${space.type}`, JSON.stringify(existingNotes))
       
       // Reward coins for creating a note
       addCoins(COIN_REWARDS.CREATE_NOTE)
