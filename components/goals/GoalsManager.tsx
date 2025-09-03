@@ -102,18 +102,18 @@ export function GoalsManager({ spaceType, spaceName, onGoalComplete }: GoalsMana
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <Target className="w-5 h-5" />
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-800 flex items-center gap-1 sm:gap-2">
+          <Target className="w-4 h-4 sm:w-5 sm:h-5" />
           Goals & Targets
         </h3>
         <motion.button
           onClick={() => setShowAddGoal(!showAddGoal)}
-          className="p-2 bg-white/60 hover:bg-white/80 rounded-lg transition-colors"
+          className="p-1.5 sm:p-2 bg-white/60 hover:bg-white/80 rounded-lg transition-colors active:scale-95 touch-manipulation"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
         </motion.button>
       </div>
 
@@ -125,55 +125,55 @@ export function GoalsManager({ spaceType, spaceName, onGoalComplete }: GoalsMana
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="p-4 bg-white/50 rounded-lg space-y-3">
+            <div className="p-3 sm:p-4 bg-white/50 rounded-lg space-y-2 sm:space-y-3">
               <input
                 type="text"
                 placeholder="Goal title"
                 value={newGoal.title}
                 onChange={(e) => setNewGoal({ ...newGoal, title: e.target.value })}
-                className="w-full px-3 py-2 bg-white/70 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-400"
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/70 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-400 text-sm"
               />
               <textarea
                 placeholder="Description (optional)"
                 value={newGoal.description}
                 onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
-                className="w-full px-3 py-2 bg-white/70 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-400 resize-none"
+                className="w-full px-2 sm:px-3 py-1.5 sm:py-2 bg-white/70 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-400 resize-none text-sm"
                 rows={2}
               />
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="number"
                   placeholder="Target"
                   value={newGoal.target}
                   onChange={(e) => setNewGoal({ ...newGoal, target: parseInt(e.target.value) || 0 })}
-                  className="flex-1 px-3 py-2 bg-white/70 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-400"
+                  className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-white/70 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-400 text-sm"
                 />
                 <input
                   type="text"
                   placeholder="Unit"
                   value={newGoal.unit}
                   onChange={(e) => setNewGoal({ ...newGoal, unit: e.target.value })}
-                  className="flex-1 px-3 py-2 bg-white/70 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-400"
+                  className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-white/70 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-400 text-sm"
                 />
                 <input
                   type="date"
                   value={newGoal.deadline}
                   onChange={(e) => setNewGoal({ ...newGoal, deadline: e.target.value })}
-                  className="flex-1 px-3 py-2 bg-white/70 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-400"
+                  className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-white/70 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-400 text-sm"
                 />
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={addGoal}
-                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Add Goal
-                </button>
+              <div className="flex flex-col-reverse sm:flex-row gap-2">
                 <button
                   onClick={() => setShowAddGoal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors text-sm active:scale-95 touch-manipulation"
                 >
                   Cancel
+                </button>
+                <button
+                  onClick={addGoal}
+                  className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm active:scale-95 touch-manipulation"
+                >
+                  Add Goal
                 </button>
               </div>
             </div>
@@ -184,19 +184,19 @@ export function GoalsManager({ spaceType, spaceName, onGoalComplete }: GoalsMana
       {/* Active Goals */}
       {activeGoals.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-gray-600">Active Goals</h4>
+          <h4 className="text-xs sm:text-sm font-medium text-gray-600">Active Goals</h4>
           {activeGoals.map((goal) => (
             <motion.div
               key={goal.id}
               layout
-              className="p-3 bg-white/50 rounded-lg"
+              className="p-2 sm:p-3 bg-white/50 rounded-lg"
               whileHover={{ scale: 1.01 }}
             >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1">
-                  <h5 className="font-medium text-gray-800">{goal.title}</h5>
+              <div className="flex items-start justify-between mb-2 gap-2">
+                <div className="flex-1 min-w-0">
+                  <h5 className="font-medium text-gray-800 text-sm sm:text-base truncate">{goal.title}</h5>
                   {goal.description && (
-                    <p className="text-xs text-gray-600 mt-1">{goal.description}</p>
+                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">{goal.description}</p>
                   )}
                   {goal.deadline && (
                     <p className="text-xs text-gray-500 mt-1">
@@ -206,9 +206,9 @@ export function GoalsManager({ spaceType, spaceName, onGoalComplete }: GoalsMana
                 </div>
                 <button
                   onClick={() => deleteGoal(goal.id)}
-                  className="p-1 hover:bg-red-100 rounded transition-colors"
+                  className="p-1 hover:bg-red-100 rounded transition-colors active:scale-95 touch-manipulation flex-shrink-0"
                 >
-                  <Trash2 className="w-4 h-4 text-red-500" />
+                  <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />
                 </button>
               </div>
               
@@ -230,17 +230,17 @@ export function GoalsManager({ spaceType, spaceName, onGoalComplete }: GoalsMana
                     type="number"
                     value={goal.progress}
                     onChange={(e) => updateProgress(goal.id, parseInt(e.target.value) || 0)}
-                    className="flex-1 px-2 py-1 text-sm bg-white/70 rounded border border-gray-200 focus:outline-none focus:border-blue-400"
+                    className="flex-1 px-2 py-1 text-xs sm:text-sm bg-white/70 rounded border border-gray-200 focus:outline-none focus:border-blue-400 min-w-0"
                   />
                   <button
                     onClick={() => updateProgress(goal.id, goal.progress + 1)}
-                    className="px-2 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                    className="px-2 py-1 bg-blue-500 text-white text-xs sm:text-sm rounded hover:bg-blue-600 transition-colors active:scale-95 touch-manipulation flex-shrink-0"
                   >
                     +1
                   </button>
                   <button
                     onClick={() => updateProgress(goal.id, goal.progress + 10)}
-                    className="px-2 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                    className="px-2 py-1 bg-blue-500 text-white text-xs sm:text-sm rounded hover:bg-blue-600 transition-colors active:scale-95 touch-manipulation flex-shrink-0"
                   >
                     +10
                   </button>
@@ -254,21 +254,21 @@ export function GoalsManager({ spaceType, spaceName, onGoalComplete }: GoalsMana
       {/* Completed Goals */}
       {completedGoals.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-gray-600 flex items-center gap-1">
-            <Trophy className="w-4 h-4 text-yellow-500" />
+          <h4 className="text-xs sm:text-sm font-medium text-gray-600 flex items-center gap-1">
+            <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500" />
             Completed Goals
           </h4>
           {completedGoals.map((goal) => (
             <motion.div
               key={goal.id}
               layout
-              className="p-3 bg-green-50/50 rounded-lg opacity-75"
+              className="p-2 sm:p-3 bg-green-50/50 rounded-lg opacity-75"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <div>
-                    <h5 className="font-medium text-gray-700 line-through">{goal.title}</h5>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0">
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <h5 className="font-medium text-gray-700 line-through text-sm sm:text-base truncate">{goal.title}</h5>
                     <p className="text-xs text-gray-500">
                       Completed: {goal.completedAt?.toLocaleDateString()}
                     </p>
@@ -276,9 +276,9 @@ export function GoalsManager({ spaceType, spaceName, onGoalComplete }: GoalsMana
                 </div>
                 <button
                   onClick={() => deleteGoal(goal.id)}
-                  className="p-1 hover:bg-red-100 rounded transition-colors"
+                  className="p-1 hover:bg-red-100 rounded transition-colors active:scale-95 touch-manipulation flex-shrink-0"
                 >
-                  <Trash2 className="w-4 h-4 text-red-500" />
+                  <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />
                 </button>
               </div>
             </motion.div>
@@ -287,9 +287,9 @@ export function GoalsManager({ spaceType, spaceName, onGoalComplete }: GoalsMana
       )}
 
       {goals.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <Target className="w-12 h-12 mx-auto mb-2 opacity-30" />
-          <p className="text-sm">No goals yet</p>
+        <div className="text-center py-6 sm:py-8 text-gray-500">
+          <Target className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 opacity-30" />
+          <p className="text-xs sm:text-sm">No goals yet</p>
           <p className="text-xs mt-1">Click + to add your first goal</p>
         </div>
       )}

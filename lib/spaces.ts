@@ -9,7 +9,9 @@ enum SpaceType {
   BUYING = "BUYING",
   CAREER = "CAREER",
   FAITH = "FAITH",
-  STORYTELLING = "STORYTELLING"
+  STORYTELLING = "STORYTELLING",
+  SPORTS = "SPORTS",
+  VIP_SHOPPING = "VIP_SHOPPING"
 }
 
 export const SPACES = [
@@ -84,6 +86,24 @@ export const SPACES = [
     cardClass: "story-purple-card",
     iconName: "book-open",
     description: "AI-generated stories from your daily journey"
+  },
+  {
+    type: SpaceType.SPORTS,
+    name: "Sports & Fitness",
+    color: "#F59E0B",
+    colorName: "sports-orange",
+    cardClass: "sports-orange-card",
+    iconName: "dumbbell",
+    description: "Track sports, practices, achievements, and performance"
+  },
+  {
+    type: SpaceType.VIP_SHOPPING,
+    name: "VIP Shopping",
+    color: "#8B5CF6",
+    colorName: "vip-purple",
+    cardClass: "vip-purple-card", 
+    iconName: "star",
+    description: "Your most urgent and high-priority shopping items"
   }
 ]
 

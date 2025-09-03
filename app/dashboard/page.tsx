@@ -15,6 +15,7 @@ import { SettingsModal } from "@/components/settings/SettingsModal"
 import { CommandPalette } from "@/components/ui/CommandPalette"
 import { FamilyManager } from "@/components/family/FamilyManager"
 import { AIVoiceAssistant } from "@/components/ai/AIVoiceAssistant"
+import { MinimalNavigation } from "@/components/navigation/MinimalNavigation"
 
 interface User {
   id: string
@@ -127,7 +128,22 @@ function DashboardContent() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div 
+      className="min-h-screen transition-all duration-500"
+      style={{ 
+        background: 'var(--theme-background, linear-gradient(135deg, #ffffff 0%, #f8f9fa 25%, #e9ecef 50%, #dee2e6 75%, #ced4da 100%))'
+      }}
+    >
+      {/* Navigation */}
+      <MinimalNavigation
+        user={user}
+        userProgress={userProgress}
+        onShowSettings={() => setShowSettings(true)}
+        onShowFamily={() => setShowFamily(true)}
+        onShowCommandPalette={() => setShowCommandPalette(true)}
+        onLogout={logout}
+      />
+      
       <CoinAnimation show={showAnimation} amount={lastAmount} x={50} y={20} />
       <AnimatePresence mode="wait">
         {currentView === 'home' ? (
@@ -141,17 +157,17 @@ function DashboardContent() {
               damping: 30,
               duration: 0.5
             }}
-            className="min-h-screen p-8 md:p-12"
+            className="min-h-screen pt-16 p-4 sm:p-6 md:p-8 lg:p-12"
           >
             <div className="max-w-7xl mx-auto">
         <motion.header 
-          className="mb-12"
+          className="mb-6 sm:mb-8 md:mb-12"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-4">
+            <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
               <motion.div 
                 className="p-4 bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50"
                 whileHover={{ 
@@ -172,7 +188,7 @@ function DashboardContent() {
               </motion.div>
               <div>
                 <motion.h1 
-                  className={`text-5xl font-bold bg-gradient-to-r ${powerUp ? 'from-yellow-400 via-pink-500 to-purple-600' : 'from-purple-600 to-pink-600'} bg-clip-text text-transparent tracking-tight`}
+                  className={`text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r ${powerUp ? 'from-yellow-400 via-pink-500 to-purple-600' : 'from-purple-600 to-pink-600'} bg-clip-text text-transparent tracking-tight`}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2, duration: 0.6 }}
@@ -180,17 +196,20 @@ function DashboardContent() {
                   Life Dashboard
                 </motion.h1>
                 <motion.p 
-                  className="text-gray-700 text-lg font-semibold mt-2"
+                  className="text-gray-700 text-sm sm:text-base md:text-lg font-semibold mt-1 sm:mt-2"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.6 }}
                 >
-                  Level {level} Player | 🪙 {userProgress.coins} coins | ⭐ XP: {userProgress.xp}
+                  <span className="block sm:inline">Level {level} Player</span>
+                  <span className="hidden sm:inline"> | </span>
+                  <span className="block sm:inline">🪙 {userProgress.coins} coins</span>
+                  <span className="hidden md:inline"> | ⭐ XP: {userProgress.xp}</span>
                 </motion.p>
               </div>
               {/* Level Progress Bar */}
               <motion.div 
-                className="mt-3 w-64 bg-white/50 backdrop-blur rounded-full h-3 overflow-hidden shadow-inner"
+                className="mt-2 sm:mt-3 w-full sm:w-48 md:w-64 bg-white/50 backdrop-blur rounded-full h-2 sm:h-3 overflow-hidden shadow-inner"
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ delay: 0.5, duration: 0.6 }}
@@ -206,79 +225,10 @@ function DashboardContent() {
                 />
               </motion.div>
             </div>
-            
-            {/* User Menu */}
-            <motion.div 
-              className="flex items-center gap-3"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-            >
-              {/* User Info */}
-              <div className="text-right">
-                <p className="text-sm font-semibold text-gray-800">{user.name}</p>
-                <p className="text-xs text-gray-600">{user.email}</p>
-                {user.familyId && (
-                  <p className="text-xs text-pink-600 font-medium">👨‍👩‍👧‍👦 Family Member</p>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    href="/schedule"
-                    className="p-3 bg-white/90 backdrop-blur-xl rounded-xl hover:bg-white transition-all duration-200 shadow-xl border border-white/50 hover:shadow-2xl"
-                  >
-                    <Calendar className="w-6 h-6 text-blue-500" />
-                  </Link>
-                </motion.div>
-
-                <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    href="/timeline"
-                    className="p-3 bg-white/90 backdrop-blur-xl rounded-xl hover:bg-white transition-all duration-200 shadow-xl border border-white/50 hover:shadow-2xl"
-                    title="Notes Timeline"
-                  >
-                    <Clock className="w-6 h-6 text-purple-500" />
-                  </Link>
-                </motion.div>
-
-                <motion.button 
-                  onClick={() => setShowFamily(true)}
-                  className="p-3 bg-white/90 backdrop-blur-xl rounded-xl hover:bg-white transition-all duration-200 shadow-xl border border-white/50 hover:shadow-2xl"
-                  whileHover={{ y: -2 }} 
-                  whileTap={{ scale: 0.95 }}
-                  title="Family Dashboard"
-                >
-                  <Users className="w-6 h-6 text-pink-600" />
-                </motion.button>
-
-                <motion.button 
-                  onClick={() => setShowSettings(true)}
-                  className="p-3 bg-white/90 backdrop-blur-xl rounded-xl hover:bg-white transition-all duration-200 shadow-xl border border-white/50 hover:shadow-2xl"
-                  whileHover={{ y: -2, rotate: 90 }} 
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Settings className="w-6 h-6 text-gray-600" />
-                </motion.button>
-
-                <motion.button 
-                  onClick={logout}
-                  className="p-3 bg-white/90 backdrop-blur-xl rounded-xl hover:bg-white transition-all duration-200 shadow-xl border border-white/50 hover:shadow-2xl"
-                  whileHover={{ y: -2 }} 
-                  whileTap={{ scale: 0.95 }}
-                  title="Sign Out"
-                >
-                  <LogOut className="w-6 h-6 text-red-500" />
-                </motion.button>
-              </div>
-            </motion.div>
           </div>
         </motion.header>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6 max-w-5xl mx-auto">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 max-w-6xl mx-auto px-2 sm:px-4">
                 {SPACES.map((space, index) => (
                   <motion.div 
                     key={space.type} 
@@ -308,27 +258,6 @@ function DashboardContent() {
                 ))}
               </div>
 
-        <motion.div 
-          className="mt-16 p-8 bg-white/80 backdrop-blur-xl rounded-3xl text-center shadow-2xl border border-white/50 max-w-2xl mx-auto"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.6 }}
-        >
-          <motion.p 
-            className="text-base text-gray-800 font-semibold"
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.2 }}
-          >
-            🚀 Click any space to start journaling • Press{" "}
-            <motion.kbd 
-              className="px-3 py-2 bg-white/90 rounded-lg text-sm font-bold shadow-md border border-white/50"
-              whileHover={{ scale: 1.1, y: -2 }}
-            >
-              Cmd+K
-            </motion.kbd>{" "}
-            for quick actions ✨
-          </motion.p>
-        </motion.div>
             </div>
           </motion.div>
         ) : (

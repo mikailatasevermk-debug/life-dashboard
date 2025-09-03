@@ -38,7 +38,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const commands: CommandAction[] = [
     // Navigation
     {
-      id: 'go-home',
+      id: 'nav-dashboard',
       title: 'Go to Dashboard',
       description: 'Return to main dashboard',
       icon: Home,
@@ -47,7 +47,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       action: () => { slideToHome(); onClose() }
     },
     {
-      id: 'go-schedule',
+      id: 'nav-schedule',
       title: 'Open Schedule',
       description: 'View and manage events',
       icon: Calendar,
@@ -58,7 +58,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     
     // Space Navigation
     ...SPACES.map(space => ({
-      id: `go-${space.type.toLowerCase()}`,
+      id: `space-${space.type.toLowerCase()}`,
       title: `Open ${space.name}`,
       description: `Go to ${space.name} space`,
       icon: getSpaceIcon(space.iconName),

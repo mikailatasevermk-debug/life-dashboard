@@ -12,7 +12,9 @@ import {
   Building2,
   Church,
   Moon,
-  BookOpen
+  BookOpen,
+  Dumbbell,
+  Star
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -26,6 +28,8 @@ const iconMap = {
   "church": Church,
   "moon": Moon,
   "book-open": BookOpen,
+  "dumbbell": Dumbbell,
+  "star": Star,
 }
 
 interface SpaceCardProps {
@@ -58,9 +62,9 @@ export function SpaceCard({
   const getIcon = () => {
     const IconComponent = iconMap[iconName as keyof typeof iconMap]
     if (IconComponent) {
-      return <IconComponent className="w-8 h-8" style={{ color }} />
+      return <IconComponent className="w-full h-full" style={{ color }} />
     }
-    return <ChevronRight className="w-8 h-8" style={{ color }} />
+    return <ChevronRight className="w-full h-full" style={{ color }} />
   }
 
 
@@ -79,9 +83,10 @@ export function SpaceCard({
     >
       <div className={cn(
         cardClass, 
-        "relative p-4 h-40 w-full overflow-hidden",
+        "relative p-3 sm:p-4 h-32 sm:h-36 md:h-40 w-full overflow-hidden",
         "transform transition-all duration-300 ease-out",
-        "hover:shadow-2xl"
+        "hover:shadow-2xl active:scale-95 touch-manipulation",
+        "rounded-2xl border border-white/30"
       )}>
           {/* Animated background glow */}
           <motion.div
@@ -94,27 +99,30 @@ export function SpaceCard({
           {/* Clean Header Section */}
           <div className="relative z-10 flex flex-col items-center text-center h-full justify-center">
             <motion.div 
-              className="relative p-3 rounded-2xl mb-2"
+              className="relative p-2 sm:p-3 rounded-xl sm:rounded-2xl mb-1 sm:mb-2"
               style={{ 
                 background: `linear-gradient(135deg, ${color}20 0%, ${color}10 100%)`,
                 border: `1px solid ${color}40`
               }}
-              whileHover={{ scale: 1.1 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.2 }}
             >
-              {getIcon()}
+              <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8">
+                {getIcon()}
+              </div>
               
               {/* Icon glow effect */}
               <motion.div
                 className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100"
                 style={{
-                  boxShadow: `0 0 20px ${color}40`,
+                  boxShadow: `0 0 15px ${color}40`,
                 }}
                 transition={{ duration: 0.3 }}
               />
             </motion.div>
             
-            <h3 className="text-sm font-bold text-gray-900 group-hover:text-gray-950 transition-colors px-1 text-center leading-tight">
+            <h3 className="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-gray-950 transition-colors px-1 text-center leading-tight line-clamp-2">
               {name}
             </h3>
             

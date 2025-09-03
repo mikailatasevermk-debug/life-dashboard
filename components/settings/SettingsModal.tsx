@@ -7,6 +7,8 @@ import {
   Upload, Trash2, RefreshCw, Moon, Sun, Monitor, 
   Volume2, VolumeX, Coins, Trophy, RotateCcw
 } from "lucide-react"
+import { ThemeSelector } from "./ThemeSelector"
+import { useTheme } from "@/contexts/ThemeContext"
 
 interface SettingsData {
   theme: 'light' | 'dark' | 'auto'
@@ -33,6 +35,7 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+  const { themeId, setTheme, systemTheme, setSystemTheme } = useTheme()
   const [activeTab, setActiveTab] = useState<'general' | 'appearance' | 'data' | 'about'>('general')
   const [settings, setSettings] = useState<SettingsData>({
     theme: 'auto',
@@ -285,11 +288,19 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   {activeTab === 'appearance' && (
                     <div className="space-y-6">
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Appearance</h3>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-6">Appearance Settings</h3>
                         
-                        {/* Theme */}
+                        {/* Background Themes */}
+                        <ThemeSelector 
+                          currentTheme={themeId}
+                          onThemeChange={setTheme}
+                        />
+                        
+                        <hr className="my-6" />
+                        
+                        {/* System Theme (kept for compatibility) */}
                         <div className="space-y-3">
-                          <h4 className="font-medium text-gray-800">Theme</h4>
+                          <h4 className="font-medium text-gray-800">System Theme</h4>
                           <div className="grid grid-cols-3 gap-3">
                             {[
                               { key: 'light', name: 'Light', icon: Sun },
@@ -300,9 +311,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                               return (
                                 <button
                                   key={theme.key}
-                                  onClick={() => saveSettings({...settings, theme: theme.key as any})}
+                                  onClick={() => setSystemTheme(theme.key as any)}
                                   className={`p-3 rounded-lg border-2 transition-colors ${
-                                    settings.theme === theme.key 
+                                    systemTheme === theme.key 
                                       ? 'border-purple-500 bg-purple-50' 
                                       : 'border-gray-200 bg-white/50 hover:bg-white/70'
                                   }`}
