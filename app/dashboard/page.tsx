@@ -14,6 +14,7 @@ import { useUserProgress } from "@/lib/user-progress"
 import { SettingsModal } from "@/components/settings/SettingsModal"
 import { CommandPalette } from "@/components/ui/CommandPalette"
 import { FamilyManager } from "@/components/family/FamilyManager"
+import { AIVoiceAssistant } from "@/components/ai/AIVoiceAssistant"
 
 interface User {
   id: string
@@ -83,6 +84,43 @@ function DashboardContent() {
     setUser(updatedUser)
     localStorage.setItem('current_user', JSON.stringify(updatedUser))
   }
+
+  const handleAIAction = (action: any) => {
+    // Handle custom actions from AI assistant
+    console.log('AI Action:', action)
+  }
+
+  // Set up event listeners for AI assistant actions
+  useEffect(() => {
+    const handleNavigateToSpace = (e: CustomEvent) => {
+      const space = SPACES.find(s => s.type === e.detail.space)
+      if (space) {
+        slideToSpace(space)
+      }
+    }
+
+    const handleOpenFamily = () => setShowFamily(true)
+    const handleOpenSettings = () => setShowSettings(true)
+    const handleCreateNote = (e: CustomEvent) => {
+      // This will be handled by the current space
+      if (currentSpace) {
+        // Trigger note creation in current space
+        window.dispatchEvent(new CustomEvent('trigger-note-creation', { detail: e.detail }))
+      }
+    }
+
+    window.addEventListener('navigate-to-space', handleNavigateToSpace as any)
+    window.addEventListener('open-family', handleOpenFamily)
+    window.addEventListener('open-settings', handleOpenSettings)
+    window.addEventListener('create-note', handleCreateNote as any)
+
+    return () => {
+      window.removeEventListener('navigate-to-space', handleNavigateToSpace as any)
+      window.removeEventListener('open-family', handleOpenFamily)
+      window.removeEventListener('open-settings', handleOpenSettings)
+      window.removeEventListener('create-note', handleCreateNote as any)
+    }
+  }, [currentSpace])
 
   if (!user) {
     return <div>Loading...</div>
@@ -317,6 +355,9 @@ function DashboardContent() {
         onClose={() => setShowFamily(false)}
         onUserUpdate={updateUser}
       />
+      
+      {/* AI Voice Assistant */}
+      <AIVoiceAssistant onAction={handleAIAction} />
     </div>
   )
 }

@@ -16,6 +16,10 @@ import { VoiceNoteModal } from "@/components/notes/VoiceNoteModal"
 import { PrayerTimes } from "@/components/islamic/PrayerTimes"
 import { DhikrCounter } from "@/components/islamic/DhikrCounter"
 import { QuranTracker } from "@/components/islamic/QuranTracker"
+import { AdhanSystem } from "@/components/islamic/AdhanSystem"
+import { QuranRecitationPlayer } from "@/components/islamic/QuranRecitationPlayer"
+import { DailyJourneyStory } from "@/components/storytelling/DailyJourneyStory"
+import { CVViewer } from "@/components/career/CVViewer"
 
 interface SpaceDashboardProps {
   space: {
@@ -34,6 +38,7 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
   const { progress, addCoins, COIN_REWARDS } = useUserProgress()
   const [activeQuickTool, setActiveQuickTool] = useState<'voice' | 'photo' | 'task' | 'schedule' | null>(null)
   const [showVoiceNote, setShowVoiceNote] = useState(false)
+  const [showFullCV, setShowFullCV] = useState(false)
   const [loveCount, setLoveCount] = useState(() => {
     const saved = localStorage.getItem(`loveCount_${space.type}`)
     return saved ? parseInt(saved) : 0
@@ -50,17 +55,19 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
     setRecentNotes(notes.slice(0, 3)) // Show only the 3 most recent
   }
 
-  const handleSaveNote = async (note: { title: string; content: string; audioBlob?: Blob; transcript?: string }) => {
+  const handleSaveNote = async (note: { title: string; content: string; audioBlob?: Blob; transcript?: string; shareWithFamily?: boolean }) => {
     try {
       // In demo mode, save to localStorage
       const noteData = {
         id: Date.now().toString(),
         spaceType: space.type,
+        spaceName: space.name,
         title: note.title,
         content: note.content,
         hasAudio: !!note.audioBlob,
         transcript: note.transcript,
         isVoiceNote: !!note.audioBlob,
+        shareWithFamily: note.shareWithFamily || false,
         createdAt: new Date().toISOString()
       }
       
@@ -77,6 +84,14 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
       const existingNotes = JSON.parse(localStorage.getItem(`notes_${space.type}`) || '[]')
       existingNotes.unshift(noteData)
       localStorage.setItem(`notes_${space.type}`, JSON.stringify(existingNotes))
+      
+      // Also save to user-specific notes for family activity feed
+      const currentUser = JSON.parse(localStorage.getItem('current_user') || '{}')
+      if (currentUser.id) {
+        const userNotes = JSON.parse(localStorage.getItem(`notes_${currentUser.id}`) || '[]')
+        userNotes.unshift(noteData)
+        localStorage.setItem(`notes_${currentUser.id}`, JSON.stringify(userNotes))
+      }
       
       // Reward coins for creating a note (bonus for voice notes)
       addCoins(note.audioBlob ? COIN_REWARDS.CREATE_NOTE + 5 : COIN_REWARDS.CREATE_NOTE)
@@ -332,13 +347,34 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
             )}
 
             {space.type === 'FAITH' && (
+              <div className="space-y-4">
+                <AdhanSystem location={{ city: "Amsterdam", country: "Netherlands", timezone: "Europe/Amsterdam" }} />
+                <PrayerTimes city="Amsterdam" country="Netherlands" />
+              </div>
+            )}
+
+            {space.type === 'STORYTELLING' && (
               <div>
-                <PrayerTimes city="Mecca" country="Saudi Arabia" />
+                <h3 className="font-semibold text-gray-800 mb-3">📖 Your Daily Story</h3>
+                <DailyJourneyStory />
+              </div>
+            )}
+
+            {space.type === 'CAREER' && (
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-3">💼 Professional Profile</h3>
+                <CVViewer variant="compact" />
+                <button
+                  onClick={() => setShowFullCV(true)}
+                  className="w-full mt-3 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                >
+                  View Full CV
+                </button>
               </div>
             )}
 
             {/* Default widget for other spaces */}
-            {!['LOVE', 'PROJECTS', 'FAMILY', 'FAITH'].includes(space.type) && (
+            {!['LOVE', 'PROJECTS', 'FAMILY', 'FAITH', 'STORYTELLING', 'CAREER'].includes(space.type) && (
               <div>
                 <h3 className="font-semibold text-gray-800 mb-3">⭐ Quick Tools</h3>
                 <div className="grid grid-cols-2 gap-2">
@@ -384,7 +420,7 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
           )}
 
           {/* Goals Widget */}
-          {space.type !== 'FAITH' && (
+          {!['FAITH', 'STORYTELLING'].includes(space.type) && (
             <motion.div 
               className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 border border-white/40 shadow-lg"
               initial={{ y: 20, opacity: 0 }}
@@ -413,8 +449,20 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
             </motion.div>
           )}
 
+          {/* Islamic Recitation Player for FAITH space */}
+          {space.type === 'FAITH' && (
+            <motion.div 
+              className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 border border-white/40 shadow-lg"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.9 }}
+            >
+              <QuranRecitationPlayer />
+            </motion.div>
+          )}
+
           {/* Mood Tracker Widget */}
-          {space.type !== 'FAITH' && (
+          {!['FAITH', 'STORYTELLING'].includes(space.type) && (
             <motion.div 
               className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 border border-white/40 shadow-lg"
               initial={{ y: 20, opacity: 0 }}
@@ -510,6 +558,23 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
           setShowVoiceNote(false)
         }}
       />
+      
+      {/* Full CV Modal */}
+      {showFullCV && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div className="relative">
+              <button
+                onClick={() => setShowFullCV(false)}
+                className="absolute top-4 right-4 z-10 p-2 bg-white/90 backdrop-blur rounded-full hover:bg-white transition-colors"
+              >
+                ✕
+              </button>
+              <CVViewer variant="full" />
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }

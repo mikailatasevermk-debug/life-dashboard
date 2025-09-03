@@ -11,7 +11,8 @@ import {
   ShoppingBag,
   Building2,
   Church,
-  Moon
+  Moon,
+  BookOpen
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -24,6 +25,7 @@ const iconMap = {
   "building-2": Building2,
   "church": Church,
   "moon": Moon,
+  "book-open": BookOpen,
 }
 
 interface SpaceCardProps {

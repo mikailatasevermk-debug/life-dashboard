@@ -8,7 +8,8 @@ enum SpaceType {
   LOVE = "LOVE",
   BUYING = "BUYING",
   CAREER = "CAREER",
-  FAITH = "FAITH"
+  FAITH = "FAITH",
+  STORYTELLING = "STORYTELLING"
 }
 
 export const SPACES = [
@@ -74,6 +75,15 @@ export const SPACES = [
     cardClass: "islamic-green-card",
     iconName: "moon",
     description: "Prayer, Quran, Dhikr, and Islamic guidance"
+  },
+  {
+    type: SpaceType.STORYTELLING,
+    name: "Daily Stories",
+    color: "#8B5CF6",
+    colorName: "story-purple",
+    cardClass: "story-purple-card",
+    iconName: "book-open",
+    description: "AI-generated stories from your daily journey"
   }
 ]
 

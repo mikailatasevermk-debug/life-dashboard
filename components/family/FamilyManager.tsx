@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from "framer-motion"
 import { 
   Users, UserPlus, Copy, Check, Crown, User, 
   Settings, LogOut, Trash2, Shield, Heart, 
-  X, Share, Eye, EyeOff
+  X, Share, Eye, EyeOff, Activity, BarChart3
 } from "lucide-react"
+import { FamilyActivityFeed } from "./FamilyActivityFeed"
+import { FamilyInsights } from "./FamilyInsights"
 
 interface User {
   id: string
@@ -44,7 +46,7 @@ export function FamilyManager({ currentUser, isOpen, onClose, onUserUpdate }: Fa
   const [family, setFamily] = useState<Family | null>(null)
   const [familyMembers, setFamilyMembers] = useState<User[]>([])
   const [copied, setCopied] = useState(false)
-  const [activeTab, setActiveTab] = useState<'members' | 'settings' | 'sharing'>('members')
+  const [activeTab, setActiveTab] = useState<'members' | 'activity' | 'insights' | 'sharing' | 'settings'>('members')
 
   useEffect(() => {
     if (isOpen && currentUser.familyId) {
@@ -286,9 +288,11 @@ export function FamilyManager({ currentUser, isOpen, onClose, onUserUpdate }: Fa
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex bg-gray-100 rounded-xl p-1">
+                    <div className="flex bg-gray-100 rounded-xl p-1 overflow-x-auto">
                       {[
                         { key: 'members', label: 'Members', icon: Users },
+                        { key: 'activity', label: 'Activity', icon: Activity },
+                        { key: 'insights', label: 'Insights', icon: BarChart3 },
                         { key: 'sharing', label: 'Sharing', icon: Share },
                         { key: 'settings', label: 'Settings', icon: Settings }
                       ].map(tab => {
@@ -360,6 +364,28 @@ export function FamilyManager({ currentUser, isOpen, onClose, onUserUpdate }: Fa
                               </div>
                             ))}
                           </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'activity' && (
+                        <div>
+                          {family && (
+                            <FamilyActivityFeed 
+                              familyId={family.id}
+                              currentUserId={currentUser.id}
+                            />
+                          )}
+                        </div>
+                      )}
+
+                      {activeTab === 'insights' && (
+                        <div>
+                          {family && (
+                            <FamilyInsights 
+                              familyId={family.id}
+                              familyMembers={familyMembers}
+                            />
+                          )}
                         </div>
                       )}
 

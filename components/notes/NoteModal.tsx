@@ -2,19 +2,20 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Save, FileText, Loader2 } from "lucide-react"
+import { X, Save, FileText, Loader2, Users } from "lucide-react"
 
 interface NoteModalProps {
   isOpen: boolean
   onClose: () => void
   spaceType: string
   spaceName: string
-  onSave: (note: { title: string; content: string }) => Promise<void>
+  onSave: (note: { title: string; content: string; shareWithFamily?: boolean }) => Promise<void>
 }
 
 export function NoteModal({ isOpen, onClose, spaceType, spaceName, onSave }: NoteModalProps) {
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
+  const [shareWithFamily, setShareWithFamily] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   const handleSave = async () => {
@@ -22,9 +23,10 @@ export function NoteModal({ isOpen, onClose, spaceType, spaceName, onSave }: Not
 
     setIsSaving(true)
     try {
-      await onSave({ title: title.trim(), content: content.trim() })
+      await onSave({ title: title.trim(), content: content.trim(), shareWithFamily })
       setTitle("")
       setContent("")
+      setShareWithFamily(false)
       onClose()
     } catch (error) {
       console.error("Error saving note:", error)
@@ -37,6 +39,7 @@ export function NoteModal({ isOpen, onClose, spaceType, spaceName, onSave }: Not
     if (!isSaving) {
       setTitle("")
       setContent("")
+      setShareWithFamily(false)
       onClose()
     }
   }
@@ -113,6 +116,23 @@ export function NoteModal({ isOpen, onClose, spaceType, spaceName, onSave }: Not
                     className="w-full px-4 py-3 bg-white/70 backdrop-blur border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
                     disabled={isSaving}
                   />
+                </div>
+
+                {/* Family Sharing Option */}
+                <div className="flex items-center gap-3 p-4 bg-pink-50 rounded-xl border border-pink-200">
+                  <input
+                    type="checkbox"
+                    id="shareWithFamily"
+                    checked={shareWithFamily}
+                    onChange={(e) => setShareWithFamily(e.target.checked)}
+                    className="w-5 h-5 text-pink-600 bg-white border-2 border-pink-300 rounded focus:ring-pink-500 focus:ring-2"
+                    disabled={isSaving}
+                  />
+                  <label htmlFor="shareWithFamily" className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+                    <Users className="w-4 h-4 text-pink-600" />
+                    Share with family
+                    <span className="text-xs text-gray-500">(Family members can see this note)</span>
+                  </label>
                 </div>
               </div>
 
