@@ -10,13 +10,20 @@ import { TransitionProvider, useTransition } from "@/contexts/TransitionContext"
 import { SpaceDashboard } from "@/components/space/SpaceDashboard"
 import { CoinAnimation, useCoins } from "@/components/ui/CoinAnimation"
 import { gameSounds } from "@/lib/sounds"
+import { useUserProgress } from "@/lib/user-progress"
 
 function DashboardContent() {
   const { currentView, currentSpace, slideToSpace } = useTransition()
-  const { coins, addCoins, showAnimation, lastAmount } = useCoins()
+  const { coins: animationCoins, addCoins: addAnimationCoins, showAnimation, lastAmount } = useCoins()
+  const { progress: userProgress, addCoins, checkDailyLogin } = useUserProgress()
   const [powerUp, setPowerUp] = useState(false)
-  const level = Math.floor(coins / 50) + 1
-  const progress = (coins % 50) / 50 * 100
+  
+  useEffect(() => {
+    checkDailyLogin()
+  }, [])
+  
+  const level = userProgress.level
+  const progressPercent = ((userProgress.xp % 100) / 100) * 100
 
   return (
     <div className="min-h-screen">
@@ -53,6 +60,7 @@ function DashboardContent() {
                 }}
                 onClick={() => {
                   addCoins(10)
+                  addAnimationCoins(10)
                   setPowerUp(true)
                   gameSounds?.playPowerUpSound()
                   setTimeout(() => setPowerUp(false), 1000)
@@ -76,7 +84,7 @@ function DashboardContent() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.6 }}
                 >
-                  Level {level} Player | 🪙 {coins} coins | ⭐ Progress: {progress.toFixed(0)}%
+                  Level {level} Player | 🪙 {userProgress.coins} coins | ⭐ XP: {userProgress.xp}
                 </motion.p>
               </div>
               {/* Level Progress Bar */}
@@ -88,9 +96,9 @@ function DashboardContent() {
               >
                 <motion.div 
                   className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-yellow-500 rounded-full shadow-sm"
-                  style={{ width: `${progress}%` }}
+                  style={{ width: `${progressPercent}%` }}
                   animate={{ 
-                    width: `${progress}%`,
+                    width: `${progressPercent}%`,
                     boxShadow: powerUp ? "0 0 20px rgba(255, 193, 7, 0.6)" : "none"
                   }}
                   transition={{ type: "spring", stiffness: 100 }}
@@ -128,7 +136,8 @@ function DashboardContent() {
                   <motion.div 
                     key={space.type} 
                     onClick={() => {
-                      addCoins(5)
+                      addCoins(2)
+                      addAnimationCoins(2)
                       gameSounds?.playCoinSound()
                       slideToSpace(space)
                     }} 

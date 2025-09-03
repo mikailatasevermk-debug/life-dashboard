@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { ArrowLeft, Save, Share, Settings, Plus } from "lucide-react"
 import { useTransition } from "@/contexts/TransitionContext"
 import { NotesList } from "@/components/notes/NotesList"
 import { NoteModal } from "@/components/notes/NoteModal"
+import { GoalsManager } from "@/components/goals/GoalsManager"
+import { useUserProgress } from "@/lib/user-progress"
 
 interface SpaceDashboardProps {
   space: {
@@ -21,6 +23,15 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
   const { slideToHome } = useTransition()
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const { progress, addCoins, COIN_REWARDS } = useUserProgress()
+  const [loveCount, setLoveCount] = useState(() => {
+    const saved = localStorage.getItem(`loveCount_${space.type}`)
+    return saved ? parseInt(saved) : 0
+  })
+
+  useEffect(() => {
+    addCoins(COIN_REWARDS.SPACE_VISIT)
+  }, [space.type])
 
   const handleSaveNote = async (note: { title: string; content: string }) => {
     try {
@@ -40,11 +51,22 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
         throw new Error('Failed to save note')
       }
       
+      // Reward coins for creating a note
+      addCoins(COIN_REWARDS.CREATE_NOTE)
+      
       // Trigger notes list refresh
       setRefreshKey(prev => prev + 1)
     } catch (error) {
       console.error('Error saving note:', error)
     }
+  }
+
+  const handleAddLove = () => {
+    const newCount = loveCount + 1
+    setLoveCount(newCount)
+    localStorage.setItem(`loveCount_${space.type}`, newCount.toString())
+    addCoins(5)
+    setIsNoteModalOpen(true)
   }
 
   return (
@@ -183,10 +205,20 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
               <div>
                 <h3 className="font-semibold text-gray-800 mb-3">💕 Love Counter</h3>
                 <div className="text-center">
-                  <div className="text-4xl font-bold mb-2" style={{ color: space.color }}>42</div>
+                  <motion.div 
+                    className="text-4xl font-bold mb-2" 
+                    style={{ color: space.color }}
+                    key={loveCount}
+                    initial={{ scale: 1 }}
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {loveCount}
+                  </motion.div>
                   <p className="text-sm text-gray-600">Beautiful moments shared</p>
                   <button 
-                    className="mt-3 px-4 py-2 rounded-lg text-white font-medium"
+                    onClick={handleAddLove}
+                    className="mt-3 px-4 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity"
                     style={{ backgroundColor: space.color }}
                   >
                     Add Moment ❤️
@@ -203,12 +235,18 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
                     <p className="font-medium text-sm">Life Dashboard</p>
                     <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                       <div 
-                        className="h-2 rounded-full"
+                        className="h-2 rounded-full transition-all duration-500"
                         style={{ backgroundColor: space.color, width: '85%' }}
                       />
                     </div>
                     <p className="text-xs text-gray-500 mt-1">85% complete</p>
                   </div>
+                  <button
+                    onClick={() => setIsNoteModalOpen(true)}
+                    className="w-full mt-2 px-3 py-2 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm font-medium"
+                  >
+                    + Add New Project
+                  </button>
                 </div>
               </div>
             )}
@@ -221,6 +259,12 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
                     <p className="font-medium text-sm">Family Dinner</p>
                     <p className="text-xs text-gray-500">Sunday, 6:00 PM</p>
                   </div>
+                  <button
+                    onClick={() => setIsNoteModalOpen(true)}
+                    className="w-full mt-2 px-3 py-2 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm font-medium"
+                  >
+                    + Add Family Event
+                  </button>
                 </div>
               </div>
             )}
@@ -230,16 +274,28 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
               <div>
                 <h3 className="font-semibold text-gray-800 mb-3">⭐ Quick Tools</h3>
                 <div className="grid grid-cols-2 gap-2">
-                  <button className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm">
+                  <button 
+                    onClick={() => setIsNoteModalOpen(true)}
+                    className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm"
+                  >
                     📷 Add Photo
                   </button>
-                  <button className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm">
+                  <button 
+                    onClick={() => setIsNoteModalOpen(true)}
+                    className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm"
+                  >
                     🎙️ Voice Note
                   </button>
-                  <button className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm">
+                  <button 
+                    onClick={() => setIsNoteModalOpen(true)}
+                    className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm"
+                  >
                     ✅ Add Task
                   </button>
-                  <button className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm">
+                  <button 
+                    onClick={() => setIsNoteModalOpen(true)}
+                    className="p-3 bg-white/50 rounded-lg hover:bg-white/70 transition-colors text-sm"
+                  >
                     📅 Schedule
                   </button>
                 </div>
@@ -247,12 +303,28 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
             )}
           </motion.div>
 
-          {/* Mood Tracker Widget */}
+          {/* Goals Widget */}
           <motion.div 
             className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 border border-white/40 shadow-lg"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.7 }}
+          >
+            <GoalsManager 
+              spaceType={space.type} 
+              spaceName={space.name}
+              onGoalComplete={(goal) => {
+                addCoins(COIN_REWARDS.COMPLETE_TASK)
+              }}
+            />
+          </motion.div>
+
+          {/* Mood Tracker Widget */}
+          <motion.div 
+            className="bg-white/60 backdrop-blur-xl rounded-2xl p-6 border border-white/40 shadow-lg"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.8 }}
           >
             <h3 className="font-semibold text-gray-800 mb-3">😊 Today's Mood</h3>
             <div className="flex justify-between items-center">
@@ -262,6 +334,10 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
                   className="text-2xl p-2 rounded-full hover:bg-white/50 transition-colors"
                   whileHover={{ scale: 1.2 }}
                   whileTap={{ scale: 0.9 }}
+                  onClick={() => {
+                    addCoins(COIN_REWARDS.MOOD_TRACK)
+                    localStorage.setItem(`mood_${space.type}_${new Date().toDateString()}`, index.toString())
+                  }}
                 >
                   {emoji}
                 </motion.button>

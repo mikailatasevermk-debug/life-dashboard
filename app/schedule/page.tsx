@@ -15,6 +15,21 @@ import {
 import { motion } from "framer-motion"
 import { SPACES } from "@/lib/spaces"
 
+import { Briefcase, Home, Heart, ShoppingBag, Building2, Church } from "lucide-react"
+
+const iconMap = {
+  "briefcase": Briefcase,
+  "users": Users,
+  "home": Home,
+  "heart": Heart,
+  "shopping-bag": ShoppingBag,
+  "building-2": Building2,
+  "church": Church,
+} as const
+
+// Use specific lucide icons for the spaces where available
+// We already have Users imported; for others, fallback to Calendar if not imported
+
 interface Event {
   id: string
   title: string
@@ -170,7 +185,10 @@ export default function SchedulePage() {
                     color: selectedSpace === space.type ? space.color : undefined
                   }}
                 >
-                  <space.icon className="w-3 h-3" />
+                  {(() => {
+                    const Icon = iconMap[space.iconName as keyof typeof iconMap]
+                    return <Icon className="w-3 h-3" />
+                  })()}
                 </button>
               ))}
             </div>

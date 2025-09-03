@@ -1,28 +1,55 @@
 import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { initializeSpaces } from "@/lib/db"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { SpaceType } from "@prisma/client"
 
-// Mock data store for now
-let mockNotes: any[] = []
+async function getOrCreateUserId() {
+  const session = await getServerSession(authOptions)
+  if (session?.user?.id) {
+    return session.user.id
+  }
+
+  if (process.env.DEMO_MODE === "true") {
+    const email = process.env.DEMO_USER_EMAIL || "demo@example.com"
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {},
+      create: { email, name: "Demo User" },
+    })
+    return user.id
+  }
+
+  // No session and no demo; reject
+  return null
+}
 
 export async function GET(request: NextRequest) {
   try {
+    await initializeSpaces()
+    const userId = await getOrCreateUserId()
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
     const searchParams = request.nextUrl.searchParams
-    const spaceType = searchParams.get("spaceType")
-    const userId = searchParams.get("userId") || "default-user"
+    const spaceType = searchParams.get("spaceType") as keyof typeof SpaceType | null
 
-    let filteredNotes = mockNotes.filter(note => {
-      if (spaceType && note.spaceType !== spaceType) return false
-      if (note.userId !== userId) return false
-      return true
+    const notes = await prisma.note.findMany({
+      where: {
+        userId,
+        ...(spaceType ? { spaceType: spaceType as SpaceType } : {}),
+      },
+      orderBy: [
+        { isPinned: "desc" },
+        { updatedAt: "desc" },
+      ],
+      include: {
+        assets: true,
+        tags: true,
+      },
     })
 
-    // Sort by pinned first, then by created date
-    filteredNotes.sort((a, b) => {
-      if (a.isPinned && !b.isPinned) return -1
-      if (!a.isPinned && b.isPinned) return 1
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    })
-
-    return NextResponse.json(filteredNotes)
+    return NextResponse.json(notes)
   } catch (error) {
     console.error("Error fetching notes:", error)
     return NextResponse.json({ error: "Failed to fetch notes" }, { status: 500 })
@@ -31,23 +58,30 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { userId = "default-user", spaceType, title, content } = body
+    await initializeSpaces()
+    const userId = await getOrCreateUserId()
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const note = {
-      id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      userId,
-      spaceType,
-      title,
-      content: content || {},
-      isPinned: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      assets: [],
-      tags: []
+    const body = await request.json()
+    const { spaceType, title, content } = body as {
+      spaceType: keyof typeof SpaceType
+      title?: string
+      content?: any
     }
 
-    mockNotes.push(note)
+    if (!spaceType) {
+      return NextResponse.json({ error: "spaceType is required" }, { status: 400 })
+    }
+
+    const note = await prisma.note.create({
+      data: {
+        userId,
+        spaceType: spaceType as SpaceType,
+        title,
+        content: content ?? {},
+      },
+    })
+
     return NextResponse.json(note)
   } catch (error) {
     console.error("Error creating note:", error)
@@ -57,19 +91,33 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { id, title, content, isPinned } = body
+    const userId = await getOrCreateUserId()
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-    const noteIndex = mockNotes.findIndex(note => note.id === id)
-    if (noteIndex === -1) {
+    const body = await request.json()
+    const { id, title, content, isPinned } = body as {
+      id: string
+      title?: string
+      content?: any
+      isPinned?: boolean
+    }
+
+    if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 })
+
+    // Ensure note belongs to user
+    const existing = await prisma.note.findUnique({ where: { id } })
+    if (!existing || existing.userId !== userId) {
       return NextResponse.json({ error: "Note not found" }, { status: 404 })
     }
 
-    const note = mockNotes[noteIndex]
-    if (title !== undefined) note.title = title
-    if (content !== undefined) note.content = content
-    if (isPinned !== undefined) note.isPinned = isPinned
-    note.updatedAt = new Date().toISOString()
+    const note = await prisma.note.update({
+      where: { id },
+      data: {
+        ...(title !== undefined && { title }),
+        ...(content !== undefined && { content }),
+        ...(isPinned !== undefined && { isPinned }),
+      },
+    })
 
     return NextResponse.json(note)
   } catch (error) {
@@ -80,6 +128,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const userId = await getOrCreateUserId()
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
     const searchParams = request.nextUrl.searchParams
     const id = searchParams.get("id")
 
@@ -87,12 +138,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Note ID required" }, { status: 400 })
     }
 
-    const noteIndex = mockNotes.findIndex(note => note.id === id)
-    if (noteIndex === -1) {
+    const existing = await prisma.note.findUnique({ where: { id } })
+    if (!existing || existing.userId !== userId) {
       return NextResponse.json({ error: "Note not found" }, { status: 404 })
     }
 
-    mockNotes.splice(noteIndex, 1)
+    await prisma.note.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Error deleting note:", error)

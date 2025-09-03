@@ -54,17 +54,17 @@ npm install
 ```bash
 cp .env.example .env
 ```
-Edit `.env` with your database credentials and API keys.
+Edit `.env` with your Supabase (or Postgres) `DATABASE_URL`. For local development you can keep `DEMO_MODE=true` to use a demo user without signing in. For production, add `NEXTAUTH_SECRET` and either Google OAuth or Email settings.
 
 4. Set up the database:
 ```bash
-npx prisma generate
-npx prisma db push
+npm run db:generate
+npm run db:push
 ```
 
 5. Seed the spaces (optional):
 ```bash
-npx prisma db seed
+npm run db:seed
 ```
 
 6. Run the development server:
@@ -123,6 +123,7 @@ npm run build     # Build for production
 npm run start     # Start production server
 npm run lint      # Run ESLint
 npm run type-check # TypeScript type checking
+npm run db:test    # Validate database connectivity
 ```
 
 ### Testing
@@ -136,13 +137,19 @@ npm run test:e2e   # Run E2E tests with Playwright
 
 ### Vercel (Recommended)
 1. Push to GitHub
-2. Import project in Vercel
-3. Add environment variables
+2. Import project in Vercel (Framework: Next.js)
+3. Add Environment Variables (Project → Settings → Environment Variables):
+   - `DATABASE_URL` (Supabase pooler URI, port 6543) with `?sslmode=require&pgbouncer=true&connection_limit=1`
+   - `NEXTAUTH_URL` → `https://<your-vercel-domain>`
+   - `NEXTAUTH_SECRET` → long random string
+   - Optionally: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` or Email SMTP vars
+   - Optionally (for testing): `DEMO_MODE=true`, `NEXT_PUBLIC_DEMO_MODE=true`
 4. Deploy
+5. Initialize spaces (one-time): open `/api/init` on your deployed URL (or rely on the first notes API call to auto-initialize)
 
 ### Database
-- Use Supabase, Neon, or PlanetScale for managed PostgreSQL
-- Configure `DATABASE_URL` in production
+- Use Supabase with the Connection Pooler on Vercel
+- Configure `DATABASE_URL` with pooler + SSL + pgbouncer flags
 
 ## Roadmap
 
