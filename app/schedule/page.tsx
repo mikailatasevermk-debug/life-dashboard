@@ -20,7 +20,7 @@ import { SPACES } from "@/lib/spaces"
 import { EventModal } from "@/components/calendar/EventModal"
 import { useUserProgress } from "@/lib/user-progress"
 
-import { Briefcase, Home, Heart, ShoppingBag, Building2, Church, Moon } from "lucide-react"
+import { Briefcase, Home, Heart, ShoppingBag, Building2, Church, Moon, BookOpen, Dumbbell, Star } from "lucide-react"
 
 const iconMap = {
   "briefcase": Briefcase,
@@ -31,6 +31,9 @@ const iconMap = {
   "building-2": Building2,
   "church": Church,
   "moon": Moon,
+  "book-open": BookOpen,
+  "dumbbell": Dumbbell,
+  "star": Star,
 } as const
 
 // Use specific lucide icons for the spaces where available
@@ -278,7 +281,7 @@ export default function SchedulePage() {
                   }}
                 >
                   {(() => {
-                    const Icon = iconMap[space.iconName as keyof typeof iconMap]
+                    const Icon = iconMap[space.iconName as keyof typeof iconMap] || Calendar
                     return <Icon className="w-3 h-3" />
                   })()}
                 </button>
