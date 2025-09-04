@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { ArrowLeft, Save, Share, Settings, Plus, Mic } from "lucide-react"
 import { useTransition } from "@/contexts/TransitionContext"
 import { NotesList } from "@/components/notes/NotesList"
+import { AdvancedNotesList } from "@/components/notes/AdvancedNotesList"
 import { NoteModal } from "@/components/notes/NoteModal"
 import { GoalsManager } from "@/components/goals/GoalsManager"
 import { useUserProgress } from "@/lib/user-progress"
@@ -224,7 +225,7 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
           </div>
           
           <div className="flex-1 bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-white/40 shadow-lg overflow-auto p-3 sm:p-4 md:p-6 min-h-0">
-            <NotesList key={refreshKey} spaceType={space.type} spaceName={space.name} />
+            <AdvancedNotesList key={refreshKey} spaceType={space.type} spaceName={space.name} />
           </div>
         </motion.div>
 
@@ -396,61 +397,6 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
               </div>
             )}
 
-            {/* Default widget for other spaces */}
-            {!['LOVE', 'PROJECTS', 'FAMILY', 'FAITH', 'STORYTELLING', 'CAREER', 'VIP_SHOPPING', 'BUYING'].includes(space.type) && (
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 text-base sm:text-lg flex items-center gap-2">
-                  🚀 <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Super Tools</span>
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                  <motion.button 
-                    onClick={() => setActiveQuickTool('photo')}
-                    className="p-4 sm:p-5 bg-gradient-to-br from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 rounded-2xl transition-all text-sm sm:text-base font-medium active:scale-95 touch-manipulation shadow-lg hover:shadow-xl"
-                    whileHover={{ scale: 1.05, rotate: 2 }}
-                    whileTap={{ scale: 0.95, rotate: -2 }}
-                  >
-                    <div className="text-3xl sm:text-4xl mb-2">📸</div>
-                    <div className="text-purple-800">Snap It!</div>
-                  </motion.button>
-                  <motion.button 
-                    onClick={() => setActiveQuickTool('voice')}
-                    className="p-4 sm:p-5 bg-gradient-to-br from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 rounded-2xl transition-all text-sm sm:text-base font-medium active:scale-95 touch-manipulation shadow-lg hover:shadow-xl"
-                    whileHover={{ scale: 1.05, rotate: -2 }}
-                    whileTap={{ scale: 0.95, rotate: 2 }}
-                  >
-                    <div className="text-3xl sm:text-4xl mb-2">🎤</div>
-                    <div className="text-blue-800">Voice It!</div>
-                  </motion.button>
-                  <motion.button 
-                    onClick={() => setActiveQuickTool('task')}
-                    className="p-4 sm:p-5 bg-gradient-to-br from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 rounded-2xl transition-all text-sm sm:text-base font-medium active:scale-95 touch-manipulation shadow-lg hover:shadow-xl"
-                    whileHover={{ scale: 1.05, rotate: 2 }}
-                    whileTap={{ scale: 0.95, rotate: -2 }}
-                  >
-                    <div className="text-3xl sm:text-4xl mb-2">⚡</div>
-                    <div className="text-green-800">Task It!</div>
-                  </motion.button>
-                  <motion.button 
-                    onClick={() => setActiveQuickTool('schedule')}
-                    className="p-4 sm:p-5 bg-gradient-to-br from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 rounded-2xl transition-all text-sm sm:text-base font-medium active:scale-95 touch-manipulation shadow-lg hover:shadow-xl"
-                    whileHover={{ scale: 1.05, rotate: -2 }}
-                    whileTap={{ scale: 0.95, rotate: 2 }}
-                  >
-                    <div className="text-3xl sm:text-4xl mb-2">🗓️</div>
-                    <div className="text-orange-800">Plan It!</div>
-                  </motion.button>
-                  <motion.button 
-                    onClick={() => setActiveQuickTool('grocery')}
-                    className="p-4 sm:p-5 bg-gradient-to-br from-cyan-100 to-cyan-200 hover:from-cyan-200 hover:to-cyan-300 rounded-2xl transition-all text-sm sm:text-base font-medium active:scale-95 touch-manipulation shadow-lg hover:shadow-xl"
-                    whileHover={{ scale: 1.05, rotate: 2 }}
-                    whileTap={{ scale: 0.95, rotate: -2 }}
-                  >
-                    <div className="text-3xl sm:text-4xl mb-2">🛒</div>
-                    <div className="text-cyan-800">Shop It!</div>
-                  </motion.button>
-                </div>
-              </div>
-            )}
           </motion.div>
 
           {/* Islamic Dhikr Counter Widget for FAITH space */}
@@ -534,6 +480,65 @@ export function SpaceDashboard({ space }: SpaceDashboardProps) {
               </div>
             </motion.div>
           )}
+
+          {/* Universal Quick Tools - Available on Every Space */}
+          <motion.div 
+            className="bg-white/60 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-white/40 shadow-lg"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.9 }}
+          >
+            <h3 className="font-semibold text-gray-800 mb-3 sm:mb-4 text-base sm:text-lg flex items-center gap-2">
+              🚀 <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Super Tools</span>
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <motion.button 
+                onClick={() => setActiveQuickTool('photo')}
+                className="p-4 sm:p-5 bg-gradient-to-br from-purple-100 to-purple-200 hover:from-purple-200 hover:to-purple-300 rounded-2xl transition-all text-sm sm:text-base font-medium active:scale-95 touch-manipulation shadow-lg hover:shadow-xl"
+                whileHover={{ scale: 1.05, rotate: 2 }}
+                whileTap={{ scale: 0.95, rotate: -2 }}
+              >
+                <div className="text-3xl sm:text-4xl mb-2">📸</div>
+                <div className="text-purple-800">Snap It!</div>
+              </motion.button>
+              <motion.button 
+                onClick={() => setActiveQuickTool('voice')}
+                className="p-4 sm:p-5 bg-gradient-to-br from-blue-100 to-blue-200 hover:from-blue-200 hover:to-blue-300 rounded-2xl transition-all text-sm sm:text-base font-medium active:scale-95 touch-manipulation shadow-lg hover:shadow-xl"
+                whileHover={{ scale: 1.05, rotate: -2 }}
+                whileTap={{ scale: 0.95, rotate: 2 }}
+              >
+                <div className="text-3xl sm:text-4xl mb-2">🎤</div>
+                <div className="text-blue-800">Voice It!</div>
+              </motion.button>
+              <motion.button 
+                onClick={() => setActiveQuickTool('task')}
+                className="p-4 sm:p-5 bg-gradient-to-br from-green-100 to-green-200 hover:from-green-200 hover:to-green-300 rounded-2xl transition-all text-sm sm:text-base font-medium active:scale-95 touch-manipulation shadow-lg hover:shadow-xl"
+                whileHover={{ scale: 1.05, rotate: 2 }}
+                whileTap={{ scale: 0.95, rotate: -2 }}
+              >
+                <div className="text-3xl sm:text-4xl mb-2">⚡</div>
+                <div className="text-green-800">Task It!</div>
+              </motion.button>
+              <motion.button 
+                onClick={() => setActiveQuickTool('schedule')}
+                className="p-4 sm:p-5 bg-gradient-to-br from-orange-100 to-orange-200 hover:from-orange-200 hover:to-orange-300 rounded-2xl transition-all text-sm sm:text-base font-medium active:scale-95 touch-manipulation shadow-lg hover:shadow-xl"
+                whileHover={{ scale: 1.05, rotate: -2 }}
+                whileTap={{ scale: 0.95, rotate: 2 }}
+              >
+                <div className="text-3xl sm:text-4xl mb-2">🗓️</div>
+                <div className="text-orange-800">Plan It!</div>
+              </motion.button>
+              <motion.button 
+                onClick={() => setActiveQuickTool('grocery')}
+                className="p-4 sm:p-5 bg-gradient-to-br from-cyan-100 to-cyan-200 hover:from-cyan-200 hover:to-cyan-300 rounded-2xl transition-all text-sm sm:text-base font-medium active:scale-95 touch-manipulation shadow-lg hover:shadow-xl"
+                whileHover={{ scale: 1.05, rotate: 2 }}
+                whileTap={{ scale: 0.95, rotate: -2 }}
+              >
+                <div className="text-3xl sm:text-4xl mb-2">🛒</div>
+                <div className="text-cyan-800">Shop It!</div>
+              </motion.button>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
       

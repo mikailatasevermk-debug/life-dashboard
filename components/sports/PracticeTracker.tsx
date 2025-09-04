@@ -405,6 +405,270 @@ export function PracticeTracker({ sportId, sportName, sportEmoji }: PracticeTrac
           </div>
         </div>
       )}
+
+      {/* Create Custom Practice Modal */}
+      <AnimatePresence>
+        {showCreatePractice && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowCreatePractice(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <CreatePracticeForm
+                sportId={sportId}
+                sportName={sportName}
+                sportEmoji={sportEmoji}
+                onClose={() => setShowCreatePractice(false)}
+                onCreate={createCustomPractice}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// Create Practice Form Component
+function CreatePracticeForm({
+  sportId,
+  sportName,
+  sportEmoji,
+  onClose,
+  onCreate
+}: {
+  sportId: string
+  sportName: string
+  sportEmoji: string
+  onClose: () => void
+  onCreate: (practice: Omit<MicroPractice, 'id' | 'sportId'>) => void
+}) {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    estimatedMinutes: 5,
+    category: 'skill' as MicroPractice['category'],
+    difficulty: 2 as MicroPractice['difficulty'],
+    equipment: [] as string[],
+    tips: [] as string[]
+  })
+
+  const [equipmentInput, setEquipmentInput] = useState('')
+  const [tipInput, setTipInput] = useState('')
+
+  const categories = [
+    { id: 'warm-up', name: 'Warm-up', emoji: '🔥', color: 'text-red-600' },
+    { id: 'skill', name: 'Skill', emoji: '🎯', color: 'text-blue-600' },
+    { id: 'strength', name: 'Strength', emoji: '💪', color: 'text-orange-600' },
+    { id: 'endurance', name: 'Endurance', emoji: '🏃', color: 'text-green-600' },
+    { id: 'technique', name: 'Technique', emoji: '⚡', color: 'text-yellow-600' },
+    { id: 'cool-down', name: 'Cool-down', emoji: '🧘', color: 'text-purple-600' }
+  ]
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formData.name.trim()) return
+
+    onCreate(formData)
+    onClose()
+  }
+
+  const addEquipment = () => {
+    if (equipmentInput.trim() && !formData.equipment.includes(equipmentInput.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        equipment: [...prev.equipment, equipmentInput.trim()]
+      }))
+      setEquipmentInput('')
+    }
+  }
+
+  const addTip = () => {
+    if (tipInput.trim() && !formData.tips.includes(tipInput.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        tips: [...prev.tips, tipInput.trim()]
+      }))
+      setTipInput('')
+    }
+  }
+
+  const removeEquipment = (item: string) => {
+    setFormData(prev => ({
+      ...prev,
+      equipment: prev.equipment.filter(e => e !== item)
+    }))
+  }
+
+  const removeTip = (tip: string) => {
+    setFormData(prev => ({
+      ...prev,
+      tips: prev.tips.filter(t => t !== tip)
+    }))
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-2xl max-h-[90vh] overflow-auto">
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
+            <span className="text-2xl">{sportEmoji}</span>
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900">Create Custom Practice</h3>
+            <p className="text-sm text-gray-600">{sportName}</p>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* Basic Info */}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Practice Name</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="e.g., Swimming Freestyle Laps, Basketball Shooting Drill"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-orange-400"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Brief description of the practice..."
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-orange-400 resize-none"
+              rows={2}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Estimated Time</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={formData.estimatedMinutes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, estimatedMinutes: parseInt(e.target.value) || 5 }))}
+                  min="1"
+                  max="120"
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-orange-400"
+                />
+                <span className="text-sm text-gray-500">minutes</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
+              <select
+                value={formData.difficulty}
+                onChange={(e) => setFormData(prev => ({ ...prev, difficulty: parseInt(e.target.value) as any }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-orange-400"
+              >
+                <option value={1}>Level 1 - Beginner</option>
+                <option value={2}>Level 2 - Easy</option>
+                <option value={3}>Level 3 - Moderate</option>
+                <option value={4}>Level 4 - Hard</option>
+                <option value={5}>Level 5 - Expert</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Category Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">Category</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {categories.map(category => (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, category: category.id as any }))}
+                className={`p-3 rounded-lg border-2 transition-colors ${
+                  formData.category === category.id
+                    ? 'border-orange-300 bg-orange-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="text-lg mb-1">{category.emoji}</div>
+                <div className={`text-xs font-medium ${category.color}`}>{category.name}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Equipment */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Equipment (optional)</label>
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              value={equipmentInput}
+              onChange={(e) => setEquipmentInput(e.target.value)}
+              placeholder="e.g., Pool, Basketball, Dumbbells"
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-orange-400"
+              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addEquipment())}
+            />
+            <button
+              type="button"
+              onClick={addEquipment}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Add
+            </button>
+          </div>
+          {formData.equipment.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {formData.equipment.map(item => (
+                <span
+                  key={item}
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                >
+                  {item}
+                  <button
+                    type="button"
+                    onClick={() => removeEquipment(item)}
+                    className="text-gray-500 hover:text-red-500"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="flex-1 px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors font-medium"
+          >
+            Create Practice
+          </button>
+        </div>
+      </form>
     </div>
   )
 }
