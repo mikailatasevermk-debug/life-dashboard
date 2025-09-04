@@ -20,6 +20,7 @@ const FamilyManager = lazy(() => import("@/components/family/FamilyManager").the
 const AIVoiceAssistant = lazy(() => import("@/components/ai/AIVoiceAssistant").then(m => ({ default: m.AIVoiceAssistant })))
 import { MinimalNavigation } from "@/components/navigation/MinimalNavigation"
 import { MobileLoader } from "@/components/ui/MobileLoader"
+import { AuthWrapper } from "@/components/auth/AuthWrapper"
 
 interface User {
   id: string
@@ -31,45 +32,35 @@ interface User {
   createdAt: string
 }
 
-function DashboardContent() {
+function DashboardContent({ user, showFamilyManager, logout }: {
+  user: User,
+  showFamilyManager: () => void,
+  logout: () => void
+}) {
   const { currentView, currentSpace, slideToSpace } = useTransition()
   const { progress: userProgress, addCoins, checkDailyLogin } = useUserProgress()
   // Coins animation - simplified for mobile performance
   const [powerUp, setPowerUp] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
-  const [showFamily, setShowFamily] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
-  const [componentsReady, setComponentsReady] = useState(false)
   
   useEffect(() => {
     // Detect mobile device
-    setIsMobile(window.innerWidth <= 768)
+    const checkMobile = window.innerWidth <= 768
+    setIsMobile(checkMobile)
     
-    // Load current user
-    const savedUser = localStorage.getItem('current_user')
-    if (savedUser) {
-      setUser(JSON.parse(savedUser))
-    }
     checkDailyLogin()
     
-    // Mark components as ready after initial load
-    setComponentsReady(true)
+    // Set loading based on device type - shorter for desktop
+    const loadingTime = checkMobile ? 1000 : 200
+    const loadingTimer = setTimeout(() => {
+      setIsLoading(false)
+    }, loadingTime)
+    
+    return () => clearTimeout(loadingTimer)
   }, [])
-  
-  // Handle loading state based on component readiness
-  useEffect(() => {
-    if (componentsReady && user) {
-      // Give mobile users a minimum loading time for smoother UX
-      const loadingTimer = setTimeout(() => {
-        setIsLoading(false)
-      }, isMobile ? 800 : 100)
-      
-      return () => clearTimeout(loadingTimer)
-    }
-  }, [componentsReady, user, isMobile])
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -81,7 +72,6 @@ function DashboardContent() {
       if (e.key === 'Escape') {
         setShowCommandPalette(false)
         setShowSettings(false)
-        setShowFamily(false)
       }
     }
 
@@ -101,15 +91,9 @@ function DashboardContent() {
   const level = userProgress.level
   const progressPercent = ((userProgress.xp % 100) / 100) * 100
 
-  const logout = () => {
-    localStorage.removeItem('current_user')
-    window.location.href = '/'
-  }
+  // logout function is provided via props from AuthWrapper
 
-  const updateUser = (updatedUser: User) => {
-    setUser(updatedUser)
-    localStorage.setItem('current_user', JSON.stringify(updatedUser))
-  }
+  // User updates are handled by AuthWrapper
 
   const handleAIAction = (action: any) => {
     // Handle custom actions from AI assistant
@@ -125,7 +109,7 @@ function DashboardContent() {
       }
     }
 
-    const handleOpenFamily = () => setShowFamily(true)
+    const handleOpenFamily = () => showFamilyManager()
     const handleOpenSettings = () => setShowSettings(true)
     const handleCreateNote = (e: CustomEvent) => {
       // This will be handled by the current space
@@ -148,13 +132,8 @@ function DashboardContent() {
     }
   }, [currentSpace])
 
-  // Show loading state only when user is not loaded or during brief mobile optimization
-  if (!user) {
-    return <MobileLoader />
-  }
-  
-  // For mobile, show minimal loading screen briefly
-  if (isLoading && isMobile) {
+  // Show loading screen during initial loading
+  if (isLoading) {
     return <MobileLoader />
   }
 
@@ -170,7 +149,7 @@ function DashboardContent() {
         user={user}
         userProgress={userProgress}
         onShowSettings={() => setShowSettings(true)}
-        onShowFamily={() => setShowFamily(true)}
+        onShowFamily={handleOpenFamily}
         onShowCommandPalette={() => setShowCommandPalette(true)}
         onLogout={logout}
       />
@@ -265,7 +244,6 @@ function DashboardContent() {
                     key={space.type} 
                     onClick={() => {
                       addCoins(2)
-                      addAnimationCoins(2)
                       gameSounds?.playCoinSound()
                       slideToSpace(space)
                     }} 
@@ -314,15 +292,7 @@ function DashboardContent() {
         />
       </Suspense>
 
-      {/* Family Manager */}
-      <Suspense fallback={null}>
-        <FamilyManager
-          currentUser={user}
-          isOpen={showFamily}
-          onClose={() => setShowFamily(false)}
-          onUserUpdate={updateUser}
-        />
-      </Suspense>
+      {/* Family Manager is handled by AuthWrapper */}
       
       {/* AI Voice Assistant */}
       <Suspense fallback={null}>
@@ -334,8 +304,16 @@ function DashboardContent() {
 
 export default function AuthenticatedDashboard() {
   return (
-    <TransitionProvider>
-      <DashboardContent />
-    </TransitionProvider>
+    <AuthWrapper>
+      {(user, showFamilyManager, logout) => (
+        <TransitionProvider>
+          <DashboardContent 
+            user={user}
+            showFamilyManager={showFamilyManager}
+            logout={logout}
+          />
+        </TransitionProvider>
+      )}
+    </AuthWrapper>
   )
 }
