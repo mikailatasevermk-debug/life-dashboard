@@ -21,40 +21,46 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [systemTheme, setSystemThemeState] = useState<'light' | 'dark' | 'auto'>('auto')
   const [resolvedSystemTheme, setResolvedSystemTheme] = useState<'light' | 'dark'>('light')
 
-  // Load themes from localStorage on mount
+  // Load themes from localStorage on mount - client side only
   useEffect(() => {
-    const savedTheme = localStorage.getItem("dashboard_theme")
-    if (savedTheme) {
-      setThemeId(savedTheme)
-    }
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem("dashboard_theme")
+      if (savedTheme) {
+        setThemeId(savedTheme)
+      }
 
-    const savedSettings = localStorage.getItem('app_settings')
-    if (savedSettings) {
-      try {
-        const settings = JSON.parse(savedSettings)
-        setSystemThemeState(settings.theme || 'auto')
-      } catch (error) {
-        console.error('Error loading system theme:', error)
+      const savedSettings = localStorage.getItem('app_settings')
+      if (savedSettings) {
+        try {
+          const settings = JSON.parse(savedSettings)
+          setSystemThemeState(settings.theme || 'auto')
+        } catch (error) {
+          console.error('Error loading system theme:', error)
+        }
       }
     }
-
+    
     setIsThemeLoaded(true)
   }, [])
 
   // Save theme to localStorage when changed
   const setTheme = (newThemeId: string) => {
     setThemeId(newThemeId)
-    localStorage.setItem("dashboard_theme", newThemeId)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("dashboard_theme", newThemeId)
+    }
   }
 
   // Handle system theme changes
   const setSystemTheme = (theme: 'light' | 'dark' | 'auto') => {
     setSystemThemeState(theme)
-    // Update localStorage
-    const savedSettings = localStorage.getItem('app_settings')
-    const settings = savedSettings ? JSON.parse(savedSettings) : {}
-    const updatedSettings = { ...settings, theme }
-    localStorage.setItem('app_settings', JSON.stringify(updatedSettings))
+    // Update localStorage - client side only
+    if (typeof window !== 'undefined') {
+      const savedSettings = localStorage.getItem('app_settings')
+      const settings = savedSettings ? JSON.parse(savedSettings) : {}
+      const updatedSettings = { ...settings, theme }
+      localStorage.setItem('app_settings', JSON.stringify(updatedSettings))
+    }
   }
 
   // Resolve system theme based on preference

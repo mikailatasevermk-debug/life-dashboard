@@ -35,12 +35,19 @@ export function AuthPortal({ onAuthenticated }: AuthPortalProps) {
     familyCode: ''
   })
 
-  // Check if user is already logged in
+  // Check if user is already logged in - client side only
   useEffect(() => {
-    const savedUser = localStorage.getItem('current_user')
-    if (savedUser) {
-      onAuthenticated(JSON.parse(savedUser))
-      router.push('/dashboard')
+    if (typeof window !== 'undefined') {
+      const savedUser = localStorage.getItem('current_user')
+      if (savedUser) {
+        try {
+          onAuthenticated(JSON.parse(savedUser))
+          router.push('/dashboard')
+        } catch (error) {
+          console.error('Failed to parse saved user:', error)
+          localStorage.removeItem('current_user')
+        }
+      }
     }
   }, [onAuthenticated, router])
 
