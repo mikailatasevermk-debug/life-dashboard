@@ -15,8 +15,7 @@ const nextConfig: NextConfig = {
   },
   // Compress responses
   compress: true,
-  // Enable SWC minification for better performance
-  swcMinify: true,
+  // SWC minification is enabled by default in Next.js 15
   // Optimize images
   images: {
     formats: ['image/webp', 'image/avif'],

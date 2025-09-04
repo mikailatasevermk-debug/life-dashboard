@@ -9,15 +9,13 @@ import { motion, AnimatePresence } from "framer-motion"
 import { TransitionProvider, useTransition } from "@/contexts/TransitionContext"
 import { useUserProgress } from "@/lib/user-progress"
 import { gameSounds } from "@/lib/sounds"
-import { lazy, Suspense } from "react"
+// removed lazy, Suspense - not needed anymore
 
-// Lazy load heavy components
-const SpaceDashboard = lazy(() => import("@/components/space/SpaceDashboard").then(m => ({ default: m.SpaceDashboard })))
-const CoinAnimation = lazy(() => import("@/components/ui/CoinAnimation").then(m => ({ default: m.CoinAnimation })))
-const SettingsModal = lazy(() => import("@/components/settings/SettingsModal").then(m => ({ default: m.SettingsModal })))
-const CommandPalette = lazy(() => import("@/components/ui/CommandPalette").then(m => ({ default: m.CommandPalette })))
-const FamilyManager = lazy(() => import("@/components/family/FamilyManager").then(m => ({ default: m.FamilyManager })))
-const AIVoiceAssistant = lazy(() => import("@/components/ai/AIVoiceAssistant").then(m => ({ default: m.AIVoiceAssistant })))
+// Import components normally - lazy loading was causing production issues
+import { SpaceDashboard } from "@/components/space/SpaceDashboard"
+import { SettingsModal } from "@/components/settings/SettingsModal"
+import { CommandPalette } from "@/components/ui/CommandPalette"
+import { AIVoiceAssistant } from "@/components/ai/AIVoiceAssistant"
 import { MinimalNavigation } from "@/components/navigation/MinimalNavigation"
 import { MobileLoader } from "@/components/ui/MobileLoader"
 import { AuthWrapper } from "@/components/auth/AuthWrapper"
@@ -270,34 +268,26 @@ function DashboardContent({ user, showFamilyManager, logout }: {
             </div>
           </motion.div>
         ) : (
-          <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div></div>}>
-            <SpaceDashboard key="space" space={currentSpace} />
-          </Suspense>
+          <SpaceDashboard key="space" space={currentSpace} />
         )}
       </AnimatePresence>
       
       {/* Settings Modal */}
-      <Suspense fallback={null}>
-        <SettingsModal 
-          isOpen={showSettings}
-          onClose={() => setShowSettings(false)}
-        />
-      </Suspense>
+      <SettingsModal 
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
       
       {/* Command Palette */}
-      <Suspense fallback={null}>
-        <CommandPalette 
-          isOpen={showCommandPalette}
-          onClose={() => setShowCommandPalette(false)}
-        />
-      </Suspense>
+      <CommandPalette 
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+      />
 
       {/* Family Manager is handled by AuthWrapper */}
       
       {/* AI Voice Assistant */}
-      <Suspense fallback={null}>
-        <AIVoiceAssistant onAction={handleAIAction} />
-      </Suspense>
+      <AIVoiceAssistant onAction={handleAIAction} />
     </div>
   )
 }
