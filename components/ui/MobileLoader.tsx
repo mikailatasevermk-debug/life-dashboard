@@ -6,14 +6,18 @@ export function MobileLoader() {
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 90) return 90 // Cap at 90% until actual loading completes
-        return prev + Math.random() * 15
-      })
-    }, 150)
+    // Faster initial progress
+    const fastTimer = setTimeout(() => setProgress(30), 100)
+    const medTimer = setTimeout(() => setProgress(60), 300)
+    const slowTimer = setTimeout(() => setProgress(85), 600)
+    const finalTimer = setTimeout(() => setProgress(95), 700)
 
-    return () => clearInterval(timer)
+    return () => {
+      clearTimeout(fastTimer)
+      clearTimeout(medTimer)
+      clearTimeout(slowTimer)
+      clearTimeout(finalTimer)
+    }
   }, [])
 
   return (

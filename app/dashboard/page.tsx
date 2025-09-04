@@ -7,14 +7,17 @@ import { Calendar, Settings, Sparkles, Coins, Zap, Star, Users, User, LogOut, Cl
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { TransitionProvider, useTransition } from "@/contexts/TransitionContext"
-import { SpaceDashboard } from "@/components/space/SpaceDashboard"
-import { CoinAnimation, useCoins } from "@/components/ui/CoinAnimation"
-import { gameSounds } from "@/lib/sounds"
 import { useUserProgress } from "@/lib/user-progress"
-import { SettingsModal } from "@/components/settings/SettingsModal"
-import { CommandPalette } from "@/components/ui/CommandPalette"
-import { FamilyManager } from "@/components/family/FamilyManager"
-import { AIVoiceAssistant } from "@/components/ai/AIVoiceAssistant"
+import { gameSounds } from "@/lib/sounds"
+import { lazy, Suspense } from "react"
+
+// Lazy load heavy components
+const SpaceDashboard = lazy(() => import("@/components/space/SpaceDashboard").then(m => ({ default: m.SpaceDashboard })))
+const CoinAnimation = lazy(() => import("@/components/ui/CoinAnimation").then(m => ({ default: m.CoinAnimation })))
+const SettingsModal = lazy(() => import("@/components/settings/SettingsModal").then(m => ({ default: m.SettingsModal })))
+const CommandPalette = lazy(() => import("@/components/ui/CommandPalette").then(m => ({ default: m.CommandPalette })))
+const FamilyManager = lazy(() => import("@/components/family/FamilyManager").then(m => ({ default: m.FamilyManager })))
+const AIVoiceAssistant = lazy(() => import("@/components/ai/AIVoiceAssistant").then(m => ({ default: m.AIVoiceAssistant })))
 import { MinimalNavigation } from "@/components/navigation/MinimalNavigation"
 import { MobileLoader } from "@/components/ui/MobileLoader"
 
@@ -30,8 +33,8 @@ interface User {
 
 function DashboardContent() {
   const { currentView, currentSpace, slideToSpace } = useTransition()
-  const { coins: animationCoins, addCoins: addAnimationCoins, showAnimation, lastAmount } = useCoins()
   const { progress: userProgress, addCoins, checkDailyLogin } = useUserProgress()
+  // Coins animation - simplified for mobile performance
   const [powerUp, setPowerUp] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
@@ -39,6 +42,7 @@ function DashboardContent() {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [componentsReady, setComponentsReady] = useState(false)
   
   useEffect(() => {
     // Detect mobile device
@@ -51,13 +55,21 @@ function DashboardContent() {
     }
     checkDailyLogin()
     
-    // Simulate loading time for mobile optimization
-    const loadingTimer = setTimeout(() => {
-      setIsLoading(false)
-    }, isMobile ? 1500 : 500)
-    
-    return () => clearTimeout(loadingTimer)
+    // Mark components as ready after initial load
+    setComponentsReady(true)
   }, [])
+  
+  // Handle loading state based on component readiness
+  useEffect(() => {
+    if (componentsReady && user) {
+      // Give mobile users a minimum loading time for smoother UX
+      const loadingTimer = setTimeout(() => {
+        setIsLoading(false)
+      }, isMobile ? 800 : 100)
+      
+      return () => clearTimeout(loadingTimer)
+    }
+  }, [componentsReady, user, isMobile])
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -136,8 +148,13 @@ function DashboardContent() {
     }
   }, [currentSpace])
 
-  // Show loading state for mobile users or when initializing
-  if (!user || isLoading) {
+  // Show loading state only when user is not loaded or during brief mobile optimization
+  if (!user) {
+    return <MobileLoader />
+  }
+  
+  // For mobile, show minimal loading screen briefly
+  if (isLoading && isMobile) {
     return <MobileLoader />
   }
 
@@ -158,7 +175,7 @@ function DashboardContent() {
         onLogout={logout}
       />
       
-      <CoinAnimation show={showAnimation} amount={lastAmount} x={50} y={20} />
+      {/* <CoinAnimation show={showAnimation} amount={lastAmount} x={50} y={20} /> */}
       <AnimatePresence mode="wait">
         {currentView === 'home' ? (
           <motion.div
@@ -275,32 +292,42 @@ function DashboardContent() {
             </div>
           </motion.div>
         ) : (
-          <SpaceDashboard key="space" space={currentSpace} />
+          <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div></div>}>
+            <SpaceDashboard key="space" space={currentSpace} />
+          </Suspense>
         )}
       </AnimatePresence>
       
       {/* Settings Modal */}
-      <SettingsModal 
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-      />
+      <Suspense fallback={null}>
+        <SettingsModal 
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+        />
+      </Suspense>
       
       {/* Command Palette */}
-      <CommandPalette 
-        isOpen={showCommandPalette}
-        onClose={() => setShowCommandPalette(false)}
-      />
+      <Suspense fallback={null}>
+        <CommandPalette 
+          isOpen={showCommandPalette}
+          onClose={() => setShowCommandPalette(false)}
+        />
+      </Suspense>
 
       {/* Family Manager */}
-      <FamilyManager
-        currentUser={user}
-        isOpen={showFamily}
-        onClose={() => setShowFamily(false)}
-        onUserUpdate={updateUser}
-      />
+      <Suspense fallback={null}>
+        <FamilyManager
+          currentUser={user}
+          isOpen={showFamily}
+          onClose={() => setShowFamily(false)}
+          onUserUpdate={updateUser}
+        />
+      </Suspense>
       
       {/* AI Voice Assistant */}
-      <AIVoiceAssistant onAction={handleAIAction} />
+      <Suspense fallback={null}>
+        <AIVoiceAssistant onAction={handleAIAction} />
+      </Suspense>
     </div>
   )
 }
