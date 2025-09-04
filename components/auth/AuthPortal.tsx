@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
   User, Mail, Lock, Eye, EyeOff, UserPlus, LogIn, 
@@ -22,6 +23,7 @@ interface AuthPortalProps {
 }
 
 export function AuthPortal({ onAuthenticated }: AuthPortalProps) {
+  const router = useRouter()
   const [mode, setMode] = useState<'login' | 'register' | 'family'>('login')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -37,8 +39,9 @@ export function AuthPortal({ onAuthenticated }: AuthPortalProps) {
     const savedUser = localStorage.getItem('current_user')
     if (savedUser) {
       onAuthenticated(JSON.parse(savedUser))
+      router.push('/dashboard')
     }
-  }, [onAuthenticated])
+  }, [onAuthenticated, router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,6 +55,7 @@ export function AuthPortal({ onAuthenticated }: AuthPortalProps) {
       if (user) {
         localStorage.setItem('current_user', JSON.stringify(user))
         onAuthenticated(user)
+        router.push('/dashboard')
       } else {
         alert('User not found. Please register first.')
       }
@@ -87,6 +91,7 @@ export function AuthPortal({ onAuthenticated }: AuthPortalProps) {
       localStorage.setItem('current_user', JSON.stringify(newUser))
       
       onAuthenticated(newUser)
+      router.push('/dashboard')
       setLoading(false)
     }, 1000)
   }
@@ -120,6 +125,7 @@ export function AuthPortal({ onAuthenticated }: AuthPortalProps) {
         localStorage.setItem('app_families', JSON.stringify(families))
         
         onAuthenticated(newUser)
+        router.push('/dashboard')
       } else {
         alert('Invalid family code. Please check and try again.')
       }
@@ -138,6 +144,7 @@ export function AuthPortal({ onAuthenticated }: AuthPortalProps) {
     
     localStorage.setItem('current_user', JSON.stringify(demoUser))
     onAuthenticated(demoUser)
+    router.push('/dashboard')
   }
 
   return (

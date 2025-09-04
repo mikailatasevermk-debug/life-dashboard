@@ -21,6 +21,19 @@ interface AuthWrapperProps {
 export function AuthWrapper({ children }: AuthWrapperProps) {
   const [user, setUser] = useState<User | null>(null)
   const [showFamily, setShowFamily] = useState(false)
+  
+  // Load user from localStorage on mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem('current_user')
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser))
+      } catch (error) {
+        console.error('Failed to parse saved user:', error)
+        localStorage.removeItem('current_user')
+      }
+    }
+  }, [])
 
   const handleUserUpdate = (updatedUser: User) => {
     setUser(updatedUser)
