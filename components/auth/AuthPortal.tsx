@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
+import { MobileLoader } from "@/components/ui/MobileLoader"
 import { 
   User, Mail, Lock, Eye, EyeOff, UserPlus, LogIn, 
   Users, Shield, Heart, Home, Sparkles, ArrowRight
@@ -134,17 +135,21 @@ export function AuthPortal({ onAuthenticated }: AuthPortalProps) {
   }
 
   const createDemoAccount = () => {
-    const demoUser: User = {
-      id: 'demo-user',
-      email: 'demo@lifedashboard.com',
-      name: 'Demo User',
-      role: 'owner',
-      createdAt: new Date().toISOString()
-    }
+    setLoading(true)
     
-    localStorage.setItem('current_user', JSON.stringify(demoUser))
-    onAuthenticated(demoUser)
-    router.push('/dashboard')
+    setTimeout(() => {
+      const demoUser: User = {
+        id: 'demo-user',
+        email: 'demo@lifedashboard.com',
+        name: 'Demo User',
+        role: 'owner',
+        createdAt: new Date().toISOString()
+      }
+      
+      localStorage.setItem('current_user', JSON.stringify(demoUser))
+      onAuthenticated(demoUser)
+      router.push('/dashboard')
+    }, 800) // Brief loading state
   }
 
   return (
@@ -386,6 +391,9 @@ export function AuthPortal({ onAuthenticated }: AuthPortalProps) {
           </div>
         </motion.div>
       </div>
+      
+      {/* Mobile Loading Overlay */}
+      {loading && <MobileLoader />}
     </div>
   )
 }

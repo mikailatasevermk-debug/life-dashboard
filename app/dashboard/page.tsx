@@ -16,6 +16,7 @@ import { CommandPalette } from "@/components/ui/CommandPalette"
 import { FamilyManager } from "@/components/family/FamilyManager"
 import { AIVoiceAssistant } from "@/components/ai/AIVoiceAssistant"
 import { MinimalNavigation } from "@/components/navigation/MinimalNavigation"
+import { MobileLoader } from "@/components/ui/MobileLoader"
 
 interface User {
   id: string
@@ -36,14 +37,26 @@ function DashboardContent() {
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [showFamily, setShowFamily] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
   
   useEffect(() => {
+    // Detect mobile device
+    setIsMobile(window.innerWidth <= 768)
+    
     // Load current user
     const savedUser = localStorage.getItem('current_user')
     if (savedUser) {
       setUser(JSON.parse(savedUser))
     }
     checkDailyLogin()
+    
+    // Simulate loading time for mobile optimization
+    const loadingTimer = setTimeout(() => {
+      setIsLoading(false)
+    }, isMobile ? 1500 : 500)
+    
+    return () => clearTimeout(loadingTimer)
   }, [])
 
   // Global keyboard shortcuts
@@ -123,8 +136,9 @@ function DashboardContent() {
     }
   }, [currentSpace])
 
-  if (!user) {
-    return <div>Loading...</div>
+  // Show loading state for mobile users or when initializing
+  if (!user || isLoading) {
+    return <MobileLoader />
   }
 
   return (
