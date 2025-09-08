@@ -6,11 +6,12 @@ export interface UserProgress {
   xp: number
   totalActions: number
   lastActivity: Date
-  achievements: Achievement[]
+  dailyStreak?: number
 }
 
 export interface Achievement {
   id: string
+  code: string
   name: string
   description: string
   icon: string
@@ -23,7 +24,7 @@ const INITIAL_PROGRESS: UserProgress = {
   xp: 0,
   totalActions: 0,
   lastActivity: new Date(),
-  achievements: []
+  dailyStreak: 0
 }
 
 const COIN_REWARDS = {
@@ -36,97 +37,149 @@ const COIN_REWARDS = {
   SPACE_VISIT: 2
 }
 
-const ACHIEVEMENTS: Achievement[] = [
-  { id: 'first_note', name: 'First Step', description: 'Created your first note', icon: '📝' },
-  { id: 'level_5', name: 'Rising Star', description: 'Reached level 5', icon: '⭐' },
-  { id: 'level_10', name: 'Dedicated', description: 'Reached level 10', icon: '🏆' },
-  { id: '100_coins', name: 'Coin Collector', description: 'Earned 100 coins', icon: '💰' },
-  { id: '7_day_streak', name: 'Week Warrior', description: '7 day activity streak', icon: '🔥' },
-  { id: 'all_spaces', name: 'Life Explorer', description: 'Used all life spaces', icon: '🌟' },
-]
-
 export function useUserProgress() {
-  const [progress, setProgress] = useState<UserProgress>(() => {
-    if (typeof window !== 'undefined') {
+  const [progress, setProgress] = useState<UserProgress>(INITIAL_PROGRESS)
+  const [achievements, setAchievements] = useState<Achievement[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Fetch initial progress from database
+  useEffect(() => {
+    fetchProgress()
+  }, [])
+
+  const fetchProgress = async () => {
+    try {
+      const response = await fetch('/api/user/progress')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.progress) {
+          setProgress({
+            coins: data.progress.coins,
+            level: data.progress.level,
+            xp: data.progress.xp,
+            totalActions: data.progress.totalActions,
+            lastActivity: new Date(data.progress.lastActivity),
+            dailyStreak: data.progress.dailyStreak
+          })
+        }
+        if (data.achievements) {
+          setAchievements(data.achievements)
+        }
+        if (data.dailyBonus) {
+          // Show notification for daily bonus
+          console.log('Daily login bonus received! +20 coins')
+        }
+      } else {
+        // If API fails, try localStorage as fallback
+        const saved = localStorage.getItem('userProgress')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          parsed.lastActivity = new Date(parsed.lastActivity)
+          setProgress(parsed)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching progress:', error)
+      // Fallback to localStorage
       const saved = localStorage.getItem('userProgress')
       if (saved) {
         const parsed = JSON.parse(saved)
         parsed.lastActivity = new Date(parsed.lastActivity)
-        return parsed
+        setProgress(parsed)
       }
+    } finally {
+      setIsLoading(false)
     }
-    return INITIAL_PROGRESS
-  })
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('userProgress', JSON.stringify(progress))
-    }
-  }, [progress])
-
-  const addCoins = (amount: number, action?: keyof typeof COIN_REWARDS) => {
-    setProgress(prev => {
-      const newCoins = prev.coins + amount
-      const newXP = prev.xp + amount
-      const newLevel = Math.floor(newXP / 100) + 1
-      
-      const newAchievements = [...prev.achievements]
-      
-      // Check for achievements
-      if (newCoins >= 100 && !prev.achievements.find(a => a.id === '100_coins')) {
-        const achievement = ACHIEVEMENTS.find(a => a.id === '100_coins')!
-        newAchievements.push({ ...achievement, unlockedAt: new Date() })
-      }
-      
-      if (newLevel >= 5 && !prev.achievements.find(a => a.id === 'level_5')) {
-        const achievement = ACHIEVEMENTS.find(a => a.id === 'level_5')!
-        newAchievements.push({ ...achievement, unlockedAt: new Date() })
-      }
-      
-      if (newLevel >= 10 && !prev.achievements.find(a => a.id === 'level_10')) {
-        const achievement = ACHIEVEMENTS.find(a => a.id === 'level_10')!
-        newAchievements.push({ ...achievement, unlockedAt: new Date() })
-      }
-
-      return {
-        ...prev,
-        coins: newCoins,
-        xp: newXP,
-        level: newLevel,
-        totalActions: prev.totalActions + 1,
-        lastActivity: new Date(),
-        achievements: newAchievements
-      }
-    })
   }
 
-  const spendCoins = (amount: number): boolean => {
+  const addCoins = async (amount: number, action?: keyof typeof COIN_REWARDS) => {
+    // Optimistically update UI
+    const newCoins = progress.coins + amount
+    const newXP = progress.xp + amount
+    const newLevel = Math.floor(newXP / 100) + 1
+    
+    setProgress(prev => ({
+      ...prev,
+      coins: newCoins,
+      xp: newXP,
+      level: newLevel,
+      totalActions: prev.totalActions + 1,
+      lastActivity: new Date()
+    }))
+
+    // Persist to database
+    try {
+      const response = await fetch('/api/user/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, amount })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.progress) {
+          setProgress({
+            coins: data.progress.coins,
+            level: data.progress.level,
+            xp: data.progress.xp,
+            totalActions: data.progress.totalActions,
+            lastActivity: new Date(data.progress.lastActivity),
+            dailyStreak: data.progress.dailyStreak
+          })
+        }
+        if (data.newAchievements?.length > 0) {
+          setAchievements(prev => [...prev, ...data.newAchievements])
+          // Show achievement notifications
+          data.newAchievements.forEach((achievement: Achievement) => {
+            console.log(`Achievement unlocked: ${achievement.name}!`)
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error updating progress:', error)
+      // Still save to localStorage as fallback
+      localStorage.setItem('userProgress', JSON.stringify(progress))
+    }
+  }
+
+  const spendCoins = async (amount: number): Promise<boolean> => {
     if (progress.coins >= amount) {
+      const newCoins = progress.coins - amount
+      
       setProgress(prev => ({
         ...prev,
-        coins: prev.coins - amount
+        coins: newCoins
       }))
+
+      // Persist to database
+      try {
+        await fetch('/api/user/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'SPEND', amount: -amount })
+        })
+      } catch (error) {
+        console.error('Error spending coins:', error)
+      }
+
       return true
     }
     return false
   }
 
-  const checkDailyLogin = () => {
-    const lastActivity = new Date(progress.lastActivity)
-    const today = new Date()
-    
-    if (lastActivity.toDateString() !== today.toDateString()) {
-      addCoins(COIN_REWARDS.DAILY_LOGIN)
-      return true
-    }
+  const checkDailyLogin = async () => {
+    // This is now handled by the API automatically
+    // when fetching progress
     return false
   }
 
   return {
     progress,
+    achievements,
     addCoins,
     spendCoins,
     checkDailyLogin,
+    isLoading,
     COIN_REWARDS
   }
 }

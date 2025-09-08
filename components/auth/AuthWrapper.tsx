@@ -25,19 +25,23 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   
   // Load user from localStorage on mount - client side only
   useEffect(() => {
-    // Only access localStorage on client side
-    if (typeof window !== 'undefined') {
-      const savedUser = localStorage.getItem('current_user')
-      if (savedUser) {
-        try {
-          setUser(JSON.parse(savedUser))
-        } catch (error) {
-          console.error('Failed to parse saved user:', error)
-          localStorage.removeItem('current_user')
+    // Use setTimeout to ensure this runs after hydration
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        const savedUser = localStorage.getItem('current_user')
+        if (savedUser) {
+          try {
+            setUser(JSON.parse(savedUser))
+          } catch (error) {
+            console.error('Failed to parse saved user:', error)
+            localStorage.removeItem('current_user')
+          }
         }
+        setIsLoading(false)
       }
-      setIsLoading(false)
-    }
+    }, 0)
+    
+    return () => clearTimeout(timer)
   }, [])
 
   const handleUserUpdate = (updatedUser: User) => {

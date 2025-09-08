@@ -1,43 +1,111 @@
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
+import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "./prisma"
-
-const providers = [] as any[]
-
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-  providers.push(
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    })
-  )
-}
-
-// Email provider intentionally omitted to avoid bundling nodemailer unless configured.
+import { compare, hash } from "bcryptjs"
+import { createVerificationToken, sendVerificationEmail } from "./email"
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
-  providers,
+  providers: [
+    // Google OAuth (if configured)
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            allowDangerousEmailAccountLinking: true,
+          }),
+        ]
+      : []),
+    
+    // Email/Password authentication
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null
+        }
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        })
+
+        if (!user || !user.password) {
+          // User doesn't exist, create new account
+          if (credentials.password.length < 6) {
+            throw new Error("Password must be at least 6 characters")
+          }
+          
+          const hashedPassword = await hash(credentials.password, 12)
+          const newUser = await prisma.user.create({
+            data: {
+              email: credentials.email,
+              password: hashedPassword,
+              name: credentials.email.split("@")[0],
+            },
+          })
+          
+          // Send verification email
+          try {
+            const token = await createVerificationToken(newUser.email)
+            await sendVerificationEmail(newUser.email, token)
+          } catch (error) {
+            console.error("Failed to send verification email:", error)
+            // Continue with registration even if email fails
+          }
+          
+          return {
+            id: newUser.id,
+            email: newUser.email,
+            name: newUser.name,
+          }
+        }
+
+        // Check password
+        const isValid = await compare(credentials.password, user.password)
+        if (!isValid) {
+          return null
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        }
+      },
+    }),
+  ],
   pages: {
     signIn: "/auth/signin",
-    verifyRequest: "/auth/verify",
+    error: "/auth/signin",
   },
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
     async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub
+      if (token) {
+        session.user.id = token.id as string
+        session.user.email = token.email
+        session.user.name = token.name
       }
       return session
     },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        token.email = user.email
+        token.name = user.name
       }
       return token
     },
   },
+  debug: process.env.NODE_ENV === "development",
 }

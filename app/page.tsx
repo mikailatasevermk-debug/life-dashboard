@@ -1,18 +1,13 @@
-"use client"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { redirect } from "next/navigation"
 
-import { AuthWrapper } from "@/components/auth/AuthWrapper"
-
-export default function HomePage() {
-  return (
-    <AuthWrapper>
-      {(user, showFamilyManager, logout) => {
-        // User is authenticated, redirect to dashboard
-        if (typeof window !== 'undefined') {
-          window.location.href = '/dashboard'
-        }
-        return null
-      }}
-    </AuthWrapper>
-  )
+export default async function HomePage() {
+  const session = await getServerSession(authOptions)
+  
+  if (session) {
+    redirect("/dashboard")
+  } else {
+    redirect("/auth/signin")
+  }
 }
-

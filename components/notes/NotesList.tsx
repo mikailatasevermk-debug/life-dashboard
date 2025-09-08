@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { FileText, Pin, Trash2, Edit3, Calendar, Mic, Play, Pause } from "lucide-react"
+import { notesService } from "@/lib/notes-service"
 // Simple date formatting function
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
@@ -49,18 +50,14 @@ export function NotesList({ spaceType, spaceName }: NotesListProps) {
 
   const fetchNotes = async () => {
     try {
-      // In demo mode, read from localStorage
-      const storedNotes = localStorage.getItem(`notes_${spaceType}`)
-      if (storedNotes) {
-        const parsedNotes = JSON.parse(storedNotes).map((note: any) => ({
-          ...note,
-          isPinned: note.isPinned || false,
-          updatedAt: note.updatedAt || note.createdAt
-        }))
-        setNotes(parsedNotes)
-      } else {
-        setNotes([])
-      }
+      // Use hybrid service - tries database first, falls back to localStorage
+      const fetchedNotes = await notesService.getNotes(spaceType)
+      const parsedNotes = fetchedNotes.map((note: any) => ({
+        ...note,
+        isPinned: note.isPinned || false,
+        updatedAt: note.updatedAt || note.createdAt
+      }))
+      setNotes(parsedNotes)
     } catch (error) {
       console.error("Error fetching notes:", error)
       setNotes([])
@@ -71,11 +68,15 @@ export function NotesList({ spaceType, spaceName }: NotesListProps) {
 
   const togglePin = async (noteId: string, isPinned: boolean) => {
     try {
-      const storedNotes = JSON.parse(localStorage.getItem(`notes_${spaceType}`) || '[]')
-      const updatedNotes = storedNotes.map((note: any) => 
-        note.id === noteId ? { ...note, isPinned: !isPinned } : note
-      )
-      localStorage.setItem(`notes_${spaceType}`, JSON.stringify(updatedNotes))
+      // Find the note to update
+      const note = notes.find(n => n.id === noteId)
+      if (note) {
+        await notesService.saveNote({
+          ...note,
+          isPinned: !isPinned,
+          spaceType
+        })
+      }
       fetchNotes() // Refresh the list
     } catch (error) {
       console.error("Error updating note:", error)
@@ -86,11 +87,9 @@ export function NotesList({ spaceType, spaceName }: NotesListProps) {
     if (!confirm("Are you sure you want to delete this note?")) return
 
     try {
-      const storedNotes = JSON.parse(localStorage.getItem(`notes_${spaceType}`) || '[]')
-      const updatedNotes = storedNotes.filter((note: any) => note.id !== noteId)
-      localStorage.setItem(`notes_${spaceType}`, JSON.stringify(updatedNotes))
+      await notesService.deleteNote(noteId)
       
-      // Also delete associated audio
+      // Also delete associated audio from localStorage
       localStorage.removeItem(`audio_${noteId}`)
       
       fetchNotes() // Refresh the list

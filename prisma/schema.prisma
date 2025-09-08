@@ -22,6 +22,7 @@ model User {
   id            String    @id @default(cuid())
   email         String    @unique
   name          String?
+  password      String?   // For credentials auth
   image         String?
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
@@ -36,6 +37,8 @@ model User {
   harvests Harvest[]
   loveEntries LoveEntry[]
   moodEntries MoodEntry[]
+  progress UserProgress?
+  achievements Achievement[]
 
   @@map("users")
 }
@@ -247,4 +250,37 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+model UserProgress {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  coins        Int      @default(0)
+  level        Int      @default(1)
+  xp           Int      @default(0)
+  totalActions Int      @default(0)
+  lastActivity DateTime @default(now())
+  dailyStreak  Int      @default(0)
+  lastLoginDate DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_progress")
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  userId      String
+  code        String
+  name        String
+  description String
+  icon        String
+  unlockedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, code])
+  @@map("achievements")
 }
