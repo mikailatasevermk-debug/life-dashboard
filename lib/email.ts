@@ -5,10 +5,64 @@ import { prisma } from './prisma'
 // For production, you'll need to configure a real email service
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
+// Helper function to send email via Resend API
+async function sendViaResend(to: string, subject: string, html: string, text: string) {
+  const RESEND_API_KEY = process.env.RESEND_API_KEY
+  
+  if (!RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY not configured')
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM || 'Life Dashboard <onboarding@resend.dev>',
+        to: [to],
+        subject: subject,
+        html: html,
+        text: text,
+      }),
+    })
+
+    const data = await response.json()
+    
+    if (response.ok) {
+      console.log('✅ Email sent successfully via Resend:', data.id)
+      return { messageId: data.id }
+    } else {
+      console.error('❌ Failed to send email via Resend:', data)
+      throw new Error(data.message || 'Failed to send email')
+    }
+  } catch (error) {
+    console.error('❌ Error sending email via Resend:', error)
+    throw error
+  }
+}
+
 // Create a test transporter for development
 const createTransporter = () => {
+  // Check for Resend first (easier to set up)
+  if (process.env.RESEND_API_KEY) {
+    return {
+      sendMail: async (options: any) => {
+        return sendViaResend(
+          options.to,
+          options.subject,
+          options.html,
+          options.text
+        )
+      }
+    }
+  }
+  
+  // Then check for SMTP configuration
   if (IS_PRODUCTION && process.env.SMTP_HOST) {
-    // Production configuration
+    // Production configuration with SMTP
     return nodemailer.createTransporter({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '587'),
@@ -27,6 +81,8 @@ const createTransporter = () => {
       console.log('To:', options.to)
       console.log('Subject:', options.subject)
       console.log('Content:', options.html || options.text)
+      console.log('\n💡 To send real emails, add RESEND_API_KEY to your environment variables')
+      console.log('   Sign up at: https://resend.com (free)')
       return { messageId: 'dev-' + Date.now() }
     }
   }
