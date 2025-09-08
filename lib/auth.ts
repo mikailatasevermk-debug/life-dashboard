@@ -37,34 +37,8 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user || !user.password) {
-          // User doesn't exist, create new account
-          if (credentials.password.length < 6) {
-            throw new Error("Password must be at least 6 characters")
-          }
-          
-          const hashedPassword = await hash(credentials.password, 12)
-          const newUser = await prisma.user.create({
-            data: {
-              email: credentials.email,
-              password: hashedPassword,
-              name: credentials.email.split("@")[0],
-            },
-          })
-          
-          // Send verification email
-          try {
-            const token = await createVerificationToken(newUser.email)
-            await sendVerificationEmail(newUser.email, token)
-          } catch (error) {
-            console.error("Failed to send verification email:", error)
-            // Continue with registration even if email fails
-          }
-          
-          return {
-            id: newUser.id,
-            email: newUser.email,
-            name: newUser.name,
-          }
+          // User doesn't exist - login only, no registration here
+          return null
         }
 
         // Check password

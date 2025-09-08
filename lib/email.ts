@@ -32,6 +32,83 @@ const createTransporter = () => {
   }
 }
 
+export async function sendPasswordResetEmail(email: string, token: string) {
+  const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}`
+  
+  const transporter = createTransporter()
+  
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || '"Life Dashboard" <noreply@lifedashboard.app>',
+    to: email,
+    subject: 'Reset your password - Life Dashboard',
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+            .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🔐 Reset Your Password</h1>
+            </div>
+            <div class="content">
+              <h2>Password Reset Request</h2>
+              <p>We received a request to reset your password for your Life Dashboard account.</p>
+              
+              <div style="text-align: center;">
+                <a href="${resetUrl}" class="button">Reset Password</a>
+              </div>
+              
+              <div class="warning">
+                <strong>⏰ This link expires in 24 hours</strong><br>
+                If you didn't request this password reset, you can safely ignore this email.
+              </div>
+              
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; background: #e9ecef; padding: 10px; border-radius: 5px;">${resetUrl}</p>
+              
+              <div class="footer">
+                <p>Life Dashboard - Organize Every Aspect of Your Life</p>
+                <p>This is an automated message, please do not reply.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+    text: `
+      Password Reset Request - Life Dashboard
+      
+      We received a request to reset your password.
+      
+      Click the link below to reset your password:
+      ${resetUrl}
+      
+      This link expires in 24 hours.
+      
+      If you didn't request this password reset, you can safely ignore this email.
+    `
+  }
+  
+  try {
+    const info = await transporter.sendMail(mailOptions)
+    console.log('Password reset email sent:', info.messageId)
+    return true
+  } catch (error) {
+    console.error('Error sending password reset email:', error)
+    return false
+  }
+}
+
 export async function sendVerificationEmail(email: string, token: string) {
   const verifyUrl = `${process.env.NEXTAUTH_URL}/auth/verify?token=${token}`
   

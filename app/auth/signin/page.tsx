@@ -5,6 +5,7 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { Mail, Lock, LogIn, UserPlus, Sparkles, Chrome, CheckCircle } from "lucide-react"
+import Link from "next/link"
 
 function SignInContent() {
   const router = useRouter()
@@ -32,22 +33,36 @@ function SignInContent() {
     setSuccess("")
 
     try {
-      const result = await signIn("credentials", {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
-      })
+      if (mode === "register") {
+        // Use separate registration endpoint
+        const response = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+          }),
+        })
 
-      if (result?.error) {
-        if (mode === "register") {
-          setError("Registration failed. Try a different email.")
-        } else {
-          setError("Invalid email or password")
-        }
-      } else {
-        if (mode === "register") {
+        const data = await response.json()
+
+        if (response.ok) {
           setSuccess("Registration successful! Check your email for verification link.")
           setMode("login")
+          setFormData({ email: formData.email, password: "" })
+        } else {
+          setError(data.error || "Registration failed")
+        }
+      } else {
+        // Login with NextAuth
+        const result = await signIn("credentials", {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        })
+
+        if (result?.error) {
+          setError("Invalid email or password")
         } else {
           router.push("/dashboard")
         }
@@ -117,6 +132,16 @@ function SignInContent() {
                   placeholder="••••••••"
                 />
               </div>
+              {mode === "login" && (
+                <div className="text-right">
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-sm text-purple-600 hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+              )}
             </div>
 
             {success && (
