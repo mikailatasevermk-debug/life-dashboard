@@ -54,12 +54,12 @@ export function useUserProgress() {
         const data = await response.json()
         if (data.progress) {
           setProgress({
-            coins: data.progress.coins,
-            level: data.progress.level,
-            xp: data.progress.xp,
-            totalActions: data.progress.totalActions,
-            lastActivity: new Date(data.progress.lastActivity),
-            dailyStreak: data.progress.dailyStreak
+            coins: data.progress.coins || 0,
+            level: data.progress.level || 1,
+            xp: data.progress.xp || 0,
+            totalActions: data.progress.totalActions || 0,
+            lastActivity: data.progress.lastActivity ? new Date(data.progress.lastActivity) : new Date(),
+            dailyStreak: data.progress.dailyStreak || 0
           })
         }
         if (data.achievements) {
@@ -69,23 +69,39 @@ export function useUserProgress() {
           // Show notification for daily bonus
           console.log('Daily login bonus received! +20 coins')
         }
+      } else if (response.status === 401) {
+        // User not authenticated, use default values
+        console.log('User not authenticated, using default progress')
+        setProgress(INITIAL_PROGRESS)
       } else {
         // If API fails, try localStorage as fallback
+        const saved = localStorage.getItem('userProgress')
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved)
+            parsed.lastActivity = new Date(parsed.lastActivity)
+            setProgress(parsed)
+          } catch (e) {
+            console.error('Failed to parse saved progress:', e)
+            setProgress(INITIAL_PROGRESS)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching progress:', error)
+      // Fallback to localStorage or defaults
+      try {
         const saved = localStorage.getItem('userProgress')
         if (saved) {
           const parsed = JSON.parse(saved)
           parsed.lastActivity = new Date(parsed.lastActivity)
           setProgress(parsed)
+        } else {
+          setProgress(INITIAL_PROGRESS)
         }
-      }
-    } catch (error) {
-      console.error('Error fetching progress:', error)
-      // Fallback to localStorage
-      const saved = localStorage.getItem('userProgress')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        parsed.lastActivity = new Date(parsed.lastActivity)
-        setProgress(parsed)
+      } catch (e) {
+        console.error('Failed to load any progress:', e)
+        setProgress(INITIAL_PROGRESS)
       }
     } finally {
       setIsLoading(false)

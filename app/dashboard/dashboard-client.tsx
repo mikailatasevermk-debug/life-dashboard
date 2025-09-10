@@ -27,7 +27,7 @@ interface DashboardClientProps {
 
 function DashboardContent({ user }: DashboardClientProps) {
   const { currentView, currentSpace, slideToSpace } = useTransition()
-  const { progress: userProgress, addCoins, checkDailyLogin } = useUserProgress()
+  const { progress: userProgress, addCoins, checkDailyLogin, isLoading } = useUserProgress()
   const [powerUp, setPowerUp] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
@@ -67,8 +67,20 @@ function DashboardContent({ user }: DashboardClientProps) {
     }
   }, [])
   
-  const level = userProgress.level
-  const progressPercent = ((userProgress.xp % 100) / 100) * 100
+  // Show loading state while fetching user progress
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-pink-50 to-orange-100">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  const level = userProgress?.level || 1
+  const progressPercent = ((userProgress?.xp || 0) % 100) / 100 * 100
 
   const handleLogout = () => {
     signOut({ callbackUrl: "/auth/signin" })
@@ -193,8 +205,8 @@ function DashboardContent({ user }: DashboardClientProps) {
                       >
                         <span className="block sm:inline">Level {level} Player</span>
                         <span className="hidden sm:inline"> | </span>
-                        <span className="block sm:inline">🪙 {userProgress.coins} coins</span>
-                        <span className="hidden md:inline"> | ⭐ XP: {userProgress.xp}</span>
+                        <span className="block sm:inline">🪙 {userProgress?.coins || 0} coins</span>
+                        <span className="hidden md:inline"> | ⭐ XP: {userProgress?.xp || 0}</span>
                       </motion.p>
                     </div>
                     {/* Level Progress Bar */}
