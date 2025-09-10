@@ -91,6 +91,11 @@ function DashboardContent({ user }: DashboardClientProps) {
     console.log('AI Action:', action)
   }
 
+  const handleShowFamily = () => {
+    // TODO: Implement family functionality
+    console.log('Show family clicked')
+  }
+
   // Set up event listeners for AI assistant actions
   useEffect(() => {
     const handleNavigateToSpace = (e: CustomEvent) => {
@@ -143,7 +148,7 @@ function DashboardContent({ user }: DashboardClientProps) {
         user={formattedUser}
         userProgress={userProgress}
         onShowSettings={() => setShowSettings(true)}
-        onShowFamily={() => {}}
+        onShowFamily={handleShowFamily}
         onShowCommandPalette={() => setShowCommandPalette(true)}
         onLogout={handleLogout}
       />

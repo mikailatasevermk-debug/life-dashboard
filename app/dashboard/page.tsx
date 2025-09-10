@@ -1,8 +1,7 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
-// import DashboardClient from "./dashboard-client"
-import DebugDashboard from "./debug"
+import DashboardClient from "./dashboard-client"
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
@@ -11,6 +10,5 @@ export default async function DashboardPage() {
     redirect("/auth/signin")
   }
   
-  // Temporarily use debug dashboard to isolate the error
-  return <DebugDashboard user={session.user} />
+  return <DashboardClient user={session.user} />
 }
