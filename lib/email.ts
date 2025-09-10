@@ -21,7 +21,7 @@ async function sendViaResend(to: string, subject: string, html: string, text: st
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: process.env.EMAIL_FROM || 'delivered@resend.dev',
+        from: 'Life Dashboard <delivered@resend.dev>',
         to: to,
         subject: subject,
         html: html,

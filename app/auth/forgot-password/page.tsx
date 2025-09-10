@@ -18,8 +18,7 @@ export default function ForgotPasswordPage() {
     setError("")
 
     try {
-      // Try the simple endpoint first (shows link directly)
-      const response = await fetch("/api/auth/forgot-password-simple", {
+      const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -70,24 +69,18 @@ export default function ForgotPasswordPage() {
           {sent ? (
             <div className="space-y-6">
               <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">
-                <p className="font-medium">Password Reset Link Generated!</p>
-                {resetLink ? (
-                  <>
-                    <p className="mt-2">Click the link below to reset your password:</p>
-                    <div className="mt-3 p-3 bg-white rounded-lg break-all">
-                      <a 
-                        href={resetLink}
-                        className="text-purple-600 hover:underline text-xs"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {resetLink}
-                      </a>
-                    </div>
-                    <p className="mt-3 text-xs">This link expires in 24 hours</p>
-                  </>
-                ) : (
-                  <p>Check your email for password reset instructions.</p>
+                <p className="font-medium">Email sent successfully!</p>
+                <p>Check your email for password reset instructions. The link will expire in 24 hours.</p>
+                {resetLink && (
+                  <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                    <p className="text-xs text-yellow-800 mb-1">If email doesn't arrive, use this link:</p>
+                    <a 
+                      href={resetLink}
+                      className="text-purple-600 hover:underline text-xs break-all"
+                    >
+                      {resetLink}
+                    </a>
+                  </div>
                 )}
               </div>
               

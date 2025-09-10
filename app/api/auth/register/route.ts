@@ -46,12 +46,17 @@ export async function POST(req: NextRequest) {
     // Send verification email
     try {
       const token = await createVerificationToken(newUser.email)
-      await sendVerificationEmail(newUser.email, token)
-      console.log(`📧 Verification email sent to: ${newUser.email}`)
+      const result = await sendVerificationEmail(newUser.email, token)
+      
+      if (result) {
+        console.log(`✅ Verification email sent successfully to: ${newUser.email}`)
+      } else {
+        console.log(`❌ Failed to send verification email to: ${newUser.email}`)
+      }
       console.log(`🔗 Verification link: ${process.env.NEXTAUTH_URL}/auth/verify?token=${token}`)
     } catch (error) {
       console.error("Failed to send verification email:", error)
-      // Continue even if email fails
+      // Continue with registration even if email fails
     }
 
     return NextResponse.json({

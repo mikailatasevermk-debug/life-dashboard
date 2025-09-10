@@ -28,12 +28,22 @@ export async function POST(req: NextRequest) {
     // Create password reset token
     try {
       const token = await createVerificationToken(user.email)
-      await sendPasswordResetEmail(user.email, token)
+      const result = await sendPasswordResetEmail(user.email, token)
       
-      console.log(`🔑 Password reset email sent to: ${user.email}`)
+      if (result) {
+        console.log(`✅ Password reset email sent successfully to: ${user.email}`)
+      } else {
+        console.log(`❌ Failed to send password reset email to: ${user.email}`)
+      }
       console.log(`🔗 Reset link: ${process.env.NEXTAUTH_URL}/auth/reset-password?token=${token}`)
     } catch (error) {
       console.error("Failed to send password reset email:", error)
+      // Return the actual error for debugging
+      return NextResponse.json({
+        message: "Password reset link created but email delivery failed",
+        error: error instanceof Error ? error.message : "Unknown error",
+        resetLink: `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${await createVerificationToken(user.email)}`
+      }, { status: 500 })
     }
 
     return NextResponse.json({
