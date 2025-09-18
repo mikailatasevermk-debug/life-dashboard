@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 export interface UserProgress {
   coins: number
@@ -42,12 +42,7 @@ export function useUserProgress() {
   const [achievements, setAchievements] = useState<Achievement[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch initial progress from database
-  useEffect(() => {
-    fetchProgress()
-  }, [])
-
-  const fetchProgress = async () => {
+  const fetchProgress = useCallback(async () => {
     try {
       const response = await fetch('/api/user/progress')
       if (response.ok) {
@@ -106,7 +101,12 @@ export function useUserProgress() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  // Fetch initial progress from database
+  useEffect(() => {
+    fetchProgress()
+  }, [fetchProgress])
 
   const addCoins = async (amount: number, action?: keyof typeof COIN_REWARDS) => {
     // Optimistically update UI

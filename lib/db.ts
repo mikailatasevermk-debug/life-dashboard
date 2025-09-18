@@ -10,6 +10,12 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
 // Initialize spaces if they don't exist
 export async function initializeSpaces() {
+  // In demo mode, skip database initialization
+  if (process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+    console.log("Demo mode enabled, skipping database initialization")
+    return
+  }
+
   const spaces = [
     {
       type: "PROJECTS",
@@ -80,5 +86,6 @@ export async function initializeSpaces() {
     console.log("Spaces initialized successfully")
   } catch (error) {
     console.error("Error initializing spaces:", error)
+    console.log("Continuing without database initialization...")
   }
 }

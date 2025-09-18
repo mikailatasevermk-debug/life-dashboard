@@ -27,6 +27,11 @@ async function getOrCreateUserId() {
 
 export async function GET(request: NextRequest) {
   try {
+    // In demo mode, skip database operations
+    if (process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+      return NextResponse.json([])
+    }
+    
     await initializeSpaces()
     const userId = await getOrCreateUserId()
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -58,6 +63,20 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // In demo mode, skip database operations  
+    if (process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
+      const body = await request.json()
+      return NextResponse.json({
+        success: true,
+        message: 'Note saved to localStorage (demo mode)',
+        note: {
+          id: Date.now().toString(),
+          ...body,
+          createdAt: new Date().toISOString()
+        }
+      })
+    }
+    
     await initializeSpaces()
     const userId = await getOrCreateUserId()
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

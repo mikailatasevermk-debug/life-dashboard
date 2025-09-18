@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { SpaceCard } from "@/components/dashboard/SpaceCard"
 import { SPACES } from "@/lib/spaces"
 import { Calendar, Settings, Sparkles, Coins, Zap, Star, Users, User, LogOut, Clock } from "lucide-react"
@@ -26,19 +26,43 @@ interface DashboardClientProps {
 }
 
 function DashboardContent({ user }: DashboardClientProps) {
+  // Hook usage counter for debugging
+  const hookCountRef = useRef(0)
+  hookCountRef.current++
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[HOOK DEBUG] DashboardContent render #${hookCountRef.current}`)
+  }
+  
   const { currentView, currentSpace, slideToSpace } = useTransition()
-  const { progress: userProgress, addCoins, checkDailyLogin, isLoading } = useUserProgress()
+  const { progress: userProgress, addCoins, isLoading } = useUserProgress()
   const [powerUp, setPowerUp] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[HOOK DEBUG] All state hooks called:', {
+      powerUp, showSettings, showCommandPalette, isMobile,
+      currentView, currentSpace, isLoading
+    })
+  }
+  
   useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[HOOK DEBUG] Mobile detection useEffect running')
+    }
+    
     // Detect mobile device
     const checkMobile = window.innerWidth <= 768
     setIsMobile(checkMobile)
     
-    checkDailyLogin()
+    // Daily login check is handled automatically when fetching progress
+    // No need to call checkDailyLogin() here
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[HOOK DEBUG] Mobile detection complete:', checkMobile)
+    }
   }, [])
 
   // Global keyboard shortcuts
@@ -123,7 +147,7 @@ function DashboardContent({ user }: DashboardClientProps) {
       window.removeEventListener('open-settings', handleOpenSettings)
       window.removeEventListener('create-note', handleCreateNote as any)
     }
-  }, [currentSpace])
+  }, [currentSpace, slideToSpace, setShowSettings])
 
   // Format user for navigation
   const formattedUser = {
