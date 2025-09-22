@@ -2,14 +2,13 @@
 
 import { signIn } from "next-auth/react"
 import { useState, useEffect, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Mail, Lock, LogIn, UserPlus, Sparkles, Chrome, CheckCircle } from "lucide-react"
 import Link from "next/link"
 
 function SignInContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [mode, setMode] = useState<"login" | "register">("login")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -20,11 +19,15 @@ function SignInContent() {
   })
 
   useEffect(() => {
-    if (searchParams.get("verified") === "true") {
-      setSuccess("Email verified successfully! You can now sign in.")
-      setMode("login")
+    // Check for verification success without useSearchParams to avoid suspension
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      if (urlParams.get("verified") === "true") {
+        setSuccess("Email verified successfully! You can now sign in.")
+        setMode("login")
+      }
     }
-  }, [searchParams])
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
